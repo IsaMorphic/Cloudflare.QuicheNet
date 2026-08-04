@@ -1,35 +1,23 @@
-extern crate bindgen;
+use std::error::Error;
 
-fn main() {
-    // The bindgen::Builder is the main entry point
-    // to bindgen, and lets you build up options for
-    // the resulting bindings.
-    let builder = 
-    if std::env::var_os("CARGO_FEATURE_ANDROID").is_some() 
-    {
-        bindgen::Builder::default()
-        .clang_arg("--sysroot=/usr/local/share/android-ndk/sysroot")
-    } else { bindgen::Builder::default() };
-    // The input header we would like to generate
-    // bindings for.
-    builder.header("include/quiche.h")
-    // Tell cargo to invalidate the built crate whenever any of the
-    // included header files changed.
-    .parse_callbacks(Box::new(bindgen::CargoCallbacks::new()))
-    // Finish the builder and generate the bindings.
-    .generate()
-    // Unwrap the Result and panic on failure.
-    .expect("Unable to generate bindings")
-    .write_to_file("src/quiche.rs")
-    .expect("Couldn't write bindings!");
-
-
-    // csbindgen code, generate both rust ffi and C# dll import
+fn main() -> Result<(), Box<dyn Error>> {
+    // using bindgen, generate binding code
+   bindgen::Builder::default()
+        .header("include/quiche.h")
+        .generate()?
+        .write_to_file("src/quiche.rs")?;
+        
+    // csbindgen code, generate C# dll import
     csbindgen::Builder::default()
-    .input_bindgen_file("src/quiche.rs") // read from bindgen generated code
-    .method_filter(|x| { x.starts_with("quiche") } )
-    .csharp_dll_name("quiche")
-    .csharp_namespace("Quiche")
-    .generate_csharp_file("../NativeMethods.g.cs")
-    .unwrap();
+        .input_bindgen_file("src/quiche.rs")
+        .method_filter(|x| { x.starts_with("quiche_") } )
+        .rust_file_header("extern crate quiche;\nuse super::quiche::*;")
+        .rust_method_prefix("_")
+        .csharp_entry_point_prefix("_")
+        .csharp_dll_name("quiche-bindgen")
+        .csharp_namespace("Quiche")
+        .generate_to_file("src/quiche_ffi.rs", "../NativeMethods.g.cs")
+        .unwrap();
+
+    Ok(())
 }
