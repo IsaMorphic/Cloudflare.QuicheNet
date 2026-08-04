@@ -1,4 +1,5 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Text;
 using static Quiche.NativeMethods;
 using static Quiche.NET.QuicheLibrary;
@@ -33,7 +34,7 @@ namespace Quiche.NET
         {
             set 
             {
-                NativePtr->SetCcAlgorithm((int)value);
+                NativePtr->SetCcAlgorithm((size_t)(int)value);
             }
         }
 
