@@ -100,13 +100,17 @@
 	</ItemGroup>
 
 	<Target Condition="'$(RuntimeIdentifier)' != ''" Name="rustc" BeforeTargets="PreBuildEvent">
-		<!--NON-ANDROID RUST BUILD-->
-		<Exec WorkingDirectory="quiche-bindgen" Condition="!$(RuntimeIdentifier.StartsWith('android'))" Command="cargo build --profile $(RustProfile) --target $(RustTargetTriple)" />
-		<Exec WorkingDirectory="quiche" Condition="!$(RuntimeIdentifier.StartsWith('android'))" Command="cargo build --profile $(RustProfile) --target $(RustTargetTriple) --features ffi" />
+		<!--DESKTOP RUST BUILD-->
+		<Exec WorkingDirectory="quiche-bindgen" Condition="!$(RuntimeIdentifier.StartsWith('android')) And !$(RuntimeIdentifier.StartsWith('ios'))" Command="cargo build --profile $(RustProfile) --target $(RustTargetTriple)" />
+		<Exec WorkingDirectory="quiche" Condition="!$(RuntimeIdentifier.StartsWith('android')) And !$(RuntimeIdentifier.StartsWith('ios'))" Command="cargo build --profile $(RustProfile) --target $(RustTargetTriple) --features ffi" />
 		
 		<!--ANDROID RUST BUILD-->
 		<Exec WorkingDirectory="quiche-bindgen" Condition="$(RuntimeIdentifier.StartsWith('android'))" Command="cargo ndk -t $(RustTargetAndroid) -- build --profile $(RustProfile) --features android" />
 		<Exec WorkingDirectory="quiche" Condition="$(RuntimeIdentifier.StartsWith('android'))" Command="cargo ndk -t $(RustTargetAndroid) -- build --profile $(RustProfile) --features ffi" />
+
+		<!--iOS RUST BUILD-->
+		<Exec WorkingDirectory="quiche-bindgen" Condition="$(RuntimeIdentifier.StartsWith('ios'))" Command="cargo lipo --targets $(RustTargetTriple) --profile $(RustProfile)" />
+		<Exec WorkingDirectory="quiche" Condition="$(RuntimeIdentifier.StartsWith('ios'))" Command="cargo lipo --targets $(RustTargetTriple) --profile $(RustProfile) --features ffi" />
 
 		<Copy SourceFiles="@(RustTargetOutput)" DestinationFolder="runtimes/$(RuntimeIdentifier)/native" />
 	</Target>
