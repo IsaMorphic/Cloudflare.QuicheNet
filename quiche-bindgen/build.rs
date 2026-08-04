@@ -14,7 +14,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .rust_file_header("extern crate quiche;\nuse super::quiche::*;")
         .rust_method_prefix("_")
         .csharp_entry_point_prefix("_")
-        .csharp_dll_name("quiche-bindgen")
+        .csharp_dll_name("quiche_bindgen")
         .csharp_namespace("Quiche")
         .generate_to_file("src/quiche_ffi.rs", "../NativeMethods.g.cs")
         .unwrap();
