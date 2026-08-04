@@ -34,7 +34,7 @@ namespace QuicheNet
         {
             set 
             {
-                NativePtr->SetCcAlgorithm((int)value);
+                NativePtr->SetCcAlgorithm((size_t)(int)value);
             }
         }
 
