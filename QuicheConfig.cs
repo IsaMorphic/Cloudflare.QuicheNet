@@ -1,10 +1,10 @@
-﻿using System.Drawing;
-using System.Runtime.CompilerServices;
 using System.Text;
-using static Quiche.NativeMethods;
-using static Quiche.NET.QuicheLibrary;
 
-namespace Quiche.NET
+using Quiche;
+using static Quiche.NativeMethods;
+using static QuicheNet.QuicheLibrary;
+
+namespace QuicheNet
 {
     public unsafe class QuicheConfig : IDisposable
     {

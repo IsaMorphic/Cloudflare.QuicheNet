@@ -1,4 +1,3 @@
-using System;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
@@ -8,9 +7,11 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
+
+using Quiche;
 using static Quiche.NativeMethods;
 
-namespace Quiche.NET;
+namespace QuicheNet;
 
 public class QuicheConnection : IDisposable
 {
