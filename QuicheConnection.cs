@@ -97,7 +97,7 @@ public class QuicheConnection : IDisposable
     private readonly byte[] connectionId;
     internal ReadOnlySpan<byte> ConnectionId => connectionId;
 
-    internal unsafe Conn* NativePtr { get; private set; }
+    internal unsafe quiche_conn* NativePtr { get; private set; }
 
     public Task ConnectionEstablished => establishedTcs.Task;
 
@@ -123,7 +123,7 @@ public class QuicheConnection : IDisposable
         }
     }
 
-    private unsafe QuicheConnection(Conn* nativePtr, Socket socket, EndPoint remoteEndPoint, ReadOnlyMemory<byte> initialData, ReadOnlyMemory<byte> connectionId)
+    private unsafe QuicheConnection(quiche_conn* nativePtr, Socket socket, EndPoint remoteEndPoint, ReadOnlyMemory<byte> initialData, ReadOnlyMemory<byte> connectionId)
     {
         NativePtr = nativePtr;
 
@@ -198,7 +198,7 @@ public class QuicheConnection : IDisposable
             try
             {
                 long resultOrError;
-                SendInfo sendInfo = default;
+                quiche_send_info sendInfo = default;
                 unsafe
                 {
                     lock (this)
@@ -207,7 +207,7 @@ public class QuicheConnection : IDisposable
                         {
                             resultOrError = (long)NativePtr->Send(
                                 pktPtr, (nuint)info.SendBuffer.Length,
-                                (SendInfo*)Unsafe.AsPointer(ref sendInfo)
+                                (quiche_send_info*)Unsafe.AsPointer(ref sendInfo)
                                 );
                         }
                     }
@@ -403,7 +403,7 @@ public class QuicheConnection : IDisposable
                         var (to, to_len) = GetSocketAddress(socket.LocalEndPoint);
                         var (from, from_len) = GetSocketAddress(remoteEndPoint);
 
-                        RecvInfo recvInfo = new RecvInfo
+                        quiche_recv_info recvInfo = new quiche_recv_info
                         {
                             to = (sockaddr*)to.Pointer,
                             to_len = (size_t)to_len,
@@ -419,7 +419,7 @@ public class QuicheConnection : IDisposable
                             {
                                 resultOrError = (long)NativePtr->Recv(
                                     bufPtr, (nuint)nextPacket.Length,
-                                    (RecvInfo*)Unsafe.AsPointer(ref recvInfo)
+                                    (quiche_recv_info*)Unsafe.AsPointer(ref recvInfo)
                                     );
                             }
                         }

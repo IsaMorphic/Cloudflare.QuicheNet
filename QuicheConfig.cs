@@ -9,7 +9,7 @@ namespace Quiche.NET
     {
         // quiche_config handle
 
-        internal Config* NativePtr { get; private set; }
+        internal quiche_config* NativePtr { get; private set; }
 
         // quiche_config properties
 
