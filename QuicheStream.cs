@@ -2,7 +2,9 @@
 using System.Buffers;
 using System.IO.Pipelines;
 
-namespace Quiche.NET
+using Quiche;
+
+namespace QuicheNet
 {
     public class QuicheStream : Stream
     {

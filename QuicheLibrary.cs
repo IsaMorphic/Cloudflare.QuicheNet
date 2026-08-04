@@ -1,6 +1,6 @@
 ﻿using static Quiche.NativeMethods;
 
-namespace Quiche.NET
+namespace QuicheNet
 {
     public static class QuicheLibrary
     {

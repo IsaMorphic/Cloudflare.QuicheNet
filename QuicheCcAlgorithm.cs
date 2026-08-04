@@ -1,4 +1,4 @@
-﻿namespace Quiche.NET
+﻿namespace QuicheNet
 {
     public enum QuicheCcAlgorithm
     {
