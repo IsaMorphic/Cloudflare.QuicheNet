@@ -93,14 +93,11 @@
 	</ItemGroup>
 
 	<Target Condition="'$(RuntimeIdentifier)' != ''" Name="rustc" BeforeTargets="PreBuildEvent">
-		<!--DESKTOP RUST BUILD-->
-		<Exec WorkingDirectory="quiche-bindgen" Condition="!$(RuntimeIdentifier.StartsWith('android')) And !$(RuntimeIdentifier.StartsWith('ios'))" Command="cargo build --profile release --target $(RustTargetTriple)" />
+		<!--NON-ANDROID RUST BUILD-->
+		<Exec WorkingDirectory="quiche-bindgen" Condition="!$(RuntimeIdentifier.StartsWith('android'))" Command="cargo build --target $(RustTargetTriple) --profile release" />
 		
 		<!--ANDROID RUST BUILD-->
 		<Exec WorkingDirectory="quiche-bindgen" Condition="$(RuntimeIdentifier.StartsWith('android'))" Command="cargo ndk -t $(RustTargetAndroid) -- build --profile release" />
-
-		<!--iOS RUST BUILD-->
-		<Exec WorkingDirectory="quiche-bindgen" Condition="$(RuntimeIdentifier.StartsWith('ios'))" Command="cargo build --target $(RustTargetTriple) --profile release" />
 
 		<Copy SourceFiles="@(RustTargetOutput)" DestinationFolder="runtimes/$(RuntimeIdentifier)/native" />
 	</Target>
