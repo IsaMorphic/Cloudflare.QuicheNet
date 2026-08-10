@@ -1,0 +1,8 @@
+<Solution>
+  <Project Path="Cloudflare.QuicheNet.NativeAssets.Android/Cloudflare.QuicheNet.NativeAssets.Android.csproj" />
+  <Project Path="Cloudflare.QuicheNet.NativeAssets.iOS/Cloudflare.QuicheNet.NativeAssets.iOS.csproj" />
+  <Project Path="Cloudflare.QuicheNet.NativeAssets.Linux/Cloudflare.QuicheNet.NativeAssets.Linux.csproj" />
+  <Project Path="Cloudflare.QuicheNet.NativeAssets.macOS/Cloudflare.QuicheNet.NativeAssets.macOS.csproj" />
+  <Project Path="Cloudflare.QuicheNet.NativeAssets.Win32/Cloudflare.QuicheNet.NativeAssets.Win32.csproj" />
+  <Project Path="Cloudflare.QuicheNet/Cloudflare.QuicheNet.csproj" />
+</Solution>

@@ -32,8 +32,8 @@
 	<PropertyGroup>
 		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'linux-x64'">x86_64-unknown-linux-gnu</RustTargetTriple>
 		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">aarch64-unknown-linux-gnu</RustTargetTriple>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'linux-x64'">libiroh_bindgen.so</RustLibraryFileName>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">libiroh_bindgen.so</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'linux-x64'">libquiche_bindgen.so</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'linux-arm64'">libquiche_bindgen.so</RustLibraryFileName>
 	</PropertyGroup>
 
 	<ItemGroup>

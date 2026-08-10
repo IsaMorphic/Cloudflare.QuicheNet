@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
 
-namespace QuicheNet;
+namespace Cloudflare.QuicheNet;
 
 public class QuicheListener : IDisposable
 {

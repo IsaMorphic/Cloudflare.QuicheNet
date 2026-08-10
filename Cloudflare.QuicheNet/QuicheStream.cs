@@ -2,9 +2,9 @@
 using System.Buffers;
 using System.IO.Pipelines;
 
-using Quiche;
+using Cloudflare.Quiche;
 
-namespace QuicheNet
+namespace Cloudflare.QuicheNet
 {
     public class QuicheStream : Stream
     {

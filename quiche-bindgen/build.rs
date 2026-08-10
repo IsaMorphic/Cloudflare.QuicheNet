@@ -15,7 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         .rust_method_prefix("_")
         .csharp_entry_point_prefix("_")
         .csharp_dll_name("quiche_bindgen")
-        .csharp_namespace("Quiche")
+        .csharp_namespace("Cloudflare.Quiche")
         .generate_to_file("src/quiche_ffi.rs", "../Cloudflare.QuicheNet/NativeMethods.g.cs")
         .unwrap();
 
