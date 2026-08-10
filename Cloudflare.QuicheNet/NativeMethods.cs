@@ -2,68 +2,95 @@
 using System.Reflection;
 using System.Runtime.InteropServices;
 
-namespace Quiche
+namespace Cloudflare.Quiche
 {
     [GroupedNativeMethods]
-    internal static unsafe partial class NativeMethods
+    internal static partial class NativeMethods
     {
-        // https://docs.microsoft.com/en-us/dotnet/standard/native-interop/cross-platform
-        // Library path will search
-        // win => __DllName, __DllName.dll
-        // linux, osx => __DllName.so, __DllName.dylib
+        public static string? LibraryDirPath { get; set; }
 
         static NativeMethods()
         {
-            NativeLibrary.SetDllImportResolver(typeof(NativeMethods).Assembly, DllImportResolver);
+            NativeLibrary.SetDllImportResolver(Assembly.GetExecutingAssembly(), ImportResolver);
         }
 
-        static IntPtr DllImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
+        private static IntPtr ImportResolver(string libraryName, Assembly assembly, DllImportSearchPath? searchPath)
         {
-            if (libraryName == __DllName)
+            if (libraryName != __DllName)
             {
-                var path = "runtimes/";
-                var extension = "";
+                return IntPtr.Zero;
+            }
 
-                if (OperatingSystem.IsWindows())
+            string libraryPath;
+            if (LibraryDirPath is null)
+            {
+                string archName;
+                switch (RuntimeInformation.ProcessArchitecture)
                 {
-                    path += "win-";
-                    extension = ".dll";
+                    case Architecture.X64:
+                        archName = "x64";
+                        break;
+                    case Architecture.Arm64:
+                        archName = "arm64";
+                        break;
+                    default:
+                        return IntPtr.Zero;
+                }
+
+                string rid, libName;
+                if (OperatingSystem.IsLinux())
+                {
+                    rid = "linux-" + archName;
+                    libName = $"lib{__DllName}.so";
+                }
+                else if (OperatingSystem.IsWindows())
+                {
+                    rid = "win-" + archName;
+                    libName = $"{__DllName}.dll";
                 }
                 else if (OperatingSystem.IsMacOS())
                 {
-                    path += "osx-";
-                    extension = ".dylib";
+                    rid = "osx-" + archName;
+                    libName = $"lib{__DllName}.dylib";
                 }
-                else if (OperatingSystem.IsLinux())
+                else
                 {
-                    path += "linux-";
-                    extension = ".so";
-                }
-                else if (OperatingSystem.IsIOS())
-                {
-                    path += RuntimeInformation.ProcessArchitecture == Architecture.Arm64 ? "ios-" : "iossimulator-";
-                    extension = ".dylib";
+                    return IntPtr.Zero;
                 }
 
-                if (RuntimeInformation.ProcessArchitecture == Architecture.X86)
+                libraryPath = Path.Combine("runtimes", rid, "native", libName);
+            }
+            else 
+            {
+                string libName;
+                if (OperatingSystem.IsLinux())
                 {
-                    path += "x86";
+                    libName = $"lib{__DllName}.so";
                 }
-                else if (RuntimeInformation.ProcessArchitecture == Architecture.X64)
+                else if (OperatingSystem.IsWindows())
                 {
-                    path += "x64";
+                    libName = $"{__DllName}.dll";
                 }
-                else if (RuntimeInformation.ProcessArchitecture == Architecture.Arm64)
+                else if (OperatingSystem.IsMacOS())
                 {
-                    path += "arm64";
+                    libName = $"lib{__DllName}.dylib";
+                }
+                else
+                {
+                    return IntPtr.Zero;
                 }
 
-                path += "/native/" + (OperatingSystem.IsWindows() ? "" : "lib") + __DllName + extension;
-
-                return NativeLibrary.Load(Path.Combine(AppContext.BaseDirectory, path), assembly, searchPath);
+                libraryPath = Path.Combine(LibraryDirPath, libName);
             }
 
-            return IntPtr.Zero;
+            if (NativeLibrary.TryLoad(libraryPath, out IntPtr handle))
+            {
+                return handle;
+            }
+            else 
+            {
+                return IntPtr.Zero;
+            }
         }
     }
 }

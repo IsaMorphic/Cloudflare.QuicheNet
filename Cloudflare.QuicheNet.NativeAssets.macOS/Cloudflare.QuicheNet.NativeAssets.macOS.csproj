@@ -32,8 +32,8 @@
 	<PropertyGroup>
 		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'osx-x64'">x86_64-apple-darwin</RustTargetTriple>
 		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'osx-arm64'">aarch64-apple-darwin</RustTargetTriple>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'osx-x64'">libiroh_bindgen.dylib</RustLibraryFileName>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'osx-arm64'">libiroh_bindgen.dylib</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'osx-x64'">libquiche_bindgen.dylib</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'osx-arm64'">libquiche_bindgen.dylib</RustLibraryFileName>
 	</PropertyGroup>
 
 	<ItemGroup>

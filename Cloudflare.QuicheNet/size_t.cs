@@ -1,4 +1,4 @@
-namespace Quiche;
+namespace Cloudflare.Quiche;
 
 internal readonly struct size_t 
 {

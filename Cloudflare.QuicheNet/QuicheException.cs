@@ -1,26 +1,25 @@
-﻿namespace QuicheNet
+﻿namespace Cloudflare.QuicheNet;
+
+public class QuicheException : Exception
 {
-    public class QuicheException : Exception
+    private const string DEFAULT_MESSAGE = "An uncaught exception was raised by quiche!";
+
+    public QuicheError ErrorCode { get; }
+
+    internal QuicheException(QuicheError errorCode, string? message)
+        : base($"{message ?? DEFAULT_MESSAGE}\nCode: {errorCode}")
     {
-        private const string DEFAULT_MESSAGE = "An uncaught exception was raised by quiche!";
+        ErrorCode = errorCode;
+        HResult = (int)errorCode;
+    }
 
-        public QuicheError ErrorCode { get; }
-
-        internal QuicheException(QuicheError errorCode, string? message) 
-            : base($"{message ?? DEFAULT_MESSAGE}\nCode: {errorCode}")
+    public static void ThrowIfError(QuicheError errorCode, string? message = null)
+    {
+        if (errorCode >= 0)
         {
-            ErrorCode = errorCode;
-            HResult = (int)errorCode;
+            return;
         }
 
-        public static void ThrowIfError(QuicheError errorCode, string? message = null)
-        {
-            if (errorCode >= 0) 
-            {
-                return;
-            }
-
-            throw new QuicheException(errorCode, message);
-        }
+        throw new QuicheException(errorCode, message);
     }
 }

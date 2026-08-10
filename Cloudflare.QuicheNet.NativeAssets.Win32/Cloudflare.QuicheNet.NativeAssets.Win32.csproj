@@ -31,8 +31,8 @@
 	<PropertyGroup>
 		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'win-x64'">x86_64-pc-windows-msvc</RustTargetTriple>
 		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'win-arm64'">aarch64-pc-windows-msvc</RustTargetTriple>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'win-x64'">iroh_bindgen.dll</RustLibraryFileName>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'win-arm64'">iroh_bindgen.dll</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'win-x64'">quiche_bindgen.dll</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'win-arm64'">quiche_bindgen.dll</RustLibraryFileName>
 	</PropertyGroup>
 
 	<ItemGroup>

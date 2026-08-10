@@ -36,9 +36,9 @@
 		<RustTargetAndroid Condition="'$(RuntimeIdentifier)' == 'android-arm64'">arm64-v8a</RustTargetAndroid>
 		<RustTargetAndroid Condition="'$(RuntimeIdentifier)' == 'android-arm'">armeabi-v7a</RustTargetAndroid>
 		<RustTargetAndroid Condition="'$(RuntimeIdentifier)' == 'android-x64'">x86_64</RustTargetAndroid>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'android-arm64'">libiroh_bindgen.so</RustLibraryFileName>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'android-arm'">libiroh_bindgen.so</RustLibraryFileName>
-		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'android-x64'">libiroh_bindgen.so</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'android-arm64'">libquiche_bindgen.so</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'android-arm'">libquiche_bindgen.so</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'android-x64'">libquiche_bindgen.so</RustLibraryFileName>
 	</PropertyGroup>
 
 	<ItemGroup>

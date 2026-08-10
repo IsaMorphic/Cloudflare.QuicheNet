@@ -8,10 +8,10 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
 
-using Quiche;
-using static Quiche.NativeMethods;
+using Cloudflare.Quiche;
+using static Cloudflare.Quiche.NativeMethods;
 
-namespace QuicheNet;
+namespace Cloudflare.QuicheNet;
 
 public class QuicheConnection : IDisposable
 {
