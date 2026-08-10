@@ -16,7 +16,6 @@
 		<Description>A delicious C# wrapper for Cloudflare's quiche library</Description>
 		<PackageTags>quiche;networking;bindings;native;wrapper;quic</PackageTags>
 		<PackageLicenseExpression>MIT</PackageLicenseExpression>
-		<PackageReadmeFile>README.md</PackageReadmeFile>
 		<RepositoryUrl>https://github.com/IsaMorphic/Cloudflare.QuicheNet</RepositoryUrl>
 		<RepositoryType>git</RepositoryType>
 		<IncludeBuildOutput>false</IncludeBuildOutput>
