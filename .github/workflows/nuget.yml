@@ -1,0 +1,124 @@
+# This workflow will build a .NET project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-net
+
+name: NuGet
+
+on:
+  push:
+    tags: ["*"]
+
+jobs:
+  publish-desktop:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      RUNTIME_ID_OS: |-
+        ${{ case(
+          matrix.os == 'ubuntu-latest', 'linux',
+          matrix.os == 'windows-latest', 'win',
+          matrix.os == 'macos-latest', 'osx',
+          'unknown'
+        ) }}
+      PACKAGE_ID_OS: |-
+        ${{ case(
+          matrix.os == 'ubuntu-latest', 'Linux',
+          matrix.os == 'windows-latest', 'Win32',
+          matrix.os == 'macos-latest', 'macOS',
+          'unknown'
+        ) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Install cross-compilation tools
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo install cargo-cross --git https://github.com/zijiren233/cargo-cross
+      - name: Restore workloads
+        run: dotnet workload restore
+      - name: Build for x64
+        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --framework net10.0 --runtime ${{ env.RUNTIME_ID_OS }}-x64
+      - name: Build for ARM64
+        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --framework net10.0 --runtime ${{ env.RUNTIME_ID_OS }}-arm64
+      - name: Create NuGet package (native)
+        run: dotnet pack Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --output build/
+      - name: Create NuGet package (managed)
+        if: matrix.os == 'windows-latest'
+        run: dotnet pack Cloudflare.QuicheNet --output build/
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USERNAME }}
+      - name: Publish to NuGet
+        run: dotnet nuget push --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json build/**/*.nupkg --skip-duplicate
+  publish-mobile:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
+      id-token: write
+    env:
+      RUNTIME_ID_OS: |-
+        ${{ case(
+          matrix.os == 'ubuntu-latest', 'android',
+          matrix.os == 'macos-latest', 'iossimulator',
+          'unknown'
+        ) }}
+      PACKAGE_ID_OS: |-
+        ${{ case(
+          matrix.os == 'ubuntu-latest', 'Android',
+          matrix.os == 'macos-latest', 'iOS',
+          'unknown'
+        ) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      - name: Setup Android SDK
+        if: matrix.os == 'ubuntu-latest'
+        uses: android-actions/setup-android@v4
+      - name: Setup Android NDK
+        if: matrix.os == 'ubuntu-latest'
+        uses: nttld/setup-ndk@v1
+        with:
+          ndk-version: r29
+          link-to-sdk: true
+      - name: Install cross-compilation tools
+        if: matrix.os == 'ubuntu-latest'
+        run: cargo install cargo-ndk
+      - name: Restore workloads
+        run: dotnet workload restore
+      - name: Build for x64
+        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-x64
+      - name: Build for ARM
+        if: matrix.os == 'ubuntu-latest'
+        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm
+      - name: Build for ARM64
+        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm64
+      - name: Build for ARM64 (Device)
+        if: matrix.os == 'macos-latest'
+        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ios-arm64
+      - name: Create NuGet package (native)
+        run: dotnet pack Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --output build/
+      - name: NuGet login (OIDC → temp API key)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ secrets.NUGET_USERNAME }}
+      - name: Publish to NuGet
+        run: dotnet nuget push --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json build/**/*.nupkg --skip-duplicate    
