@@ -108,6 +108,9 @@ jobs:
       - name: Build for ARM
         if: matrix.os == 'ubuntu-latest'
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm
+      - name: Clean previous build
+        if: matrix.os == 'macos-latest'
+        run: cargo clean
       - name: Build for ARM64
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm64
       - name: Build for ARM64 (Device)
