@@ -111,7 +111,7 @@ jobs:
       - name: Clean previous builds
         if: matrix.os == 'macos-latest'
         run: |
-          cargo clean --manifest-path quiche/Cargo.toml
+          rm -rf ~/.cargo
           cargo clean --manifest-path quiche-bindgen/Cargo.toml
       - name: Build for ARM64
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm64
