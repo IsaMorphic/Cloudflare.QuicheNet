@@ -58,8 +58,8 @@
 
 	<Target Condition="'$(RuntimeIdentifier)' != ''" Name="rustc" BeforeTargets="PreBuildEvent">
 		<Exec WorkingDirectory="../quiche-bindgen" Command="rustup target add $(RustTargetTriple)" />
-		
-		<Exec WorkingDirectory="../quiche-bindgen" Command="cargo lipo --targets $(RustTargetTriple) --release" />
+
+		<Exec WorkingDirectory="../quiche-bindgen" Command="cargo build --target $(RustTargetTriple) --profile release" />
 
 		<Copy SourceFiles="@(RustTargetOutput)" DestinationFolder="runtimes/$(RuntimeIdentifier)/native" />
 	</Target>
