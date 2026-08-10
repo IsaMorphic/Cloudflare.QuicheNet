@@ -1,0 +1,6 @@
+[target.aarch64-apple-ios]
+rustflags = [
+  "-C", "link-arg=-target",
+  "-C", "link-arg=arm64-apple-ios26.5",
+  "-C", "link-arg=-miphoneos-version-min=26.5"
+]
