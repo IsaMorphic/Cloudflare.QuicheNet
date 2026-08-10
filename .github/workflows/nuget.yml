@@ -98,9 +98,12 @@ jobs:
         with:
           ndk-version: r29
           link-to-sdk: true
-      - name: Install cross-compilation tools
+      - name: Install cross-compilation tools (Android)
         if: matrix.os == 'ubuntu-latest'
         run: cargo install cargo-ndk
+      - name: Install cross-compilation tools (iOS)
+        if: matrix.os == 'macos-latest'
+        run: cargo install cargo-lipo
       - name: Restore workloads
         run: dotnet workload restore
       - name: Build for x64
@@ -108,11 +111,6 @@ jobs:
       - name: Build for ARM
         if: matrix.os == 'ubuntu-latest'
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm
-      - name: Clean previous builds
-        if: matrix.os == 'macos-latest'
-        run: |
-          rm -rf ~/.cargo/registry ~/.cargo/.git
-          cargo clean --manifest-path quiche-bindgen/Cargo.toml
       - name: Build for ARM64
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm64
       - name: Build for ARM64 (Device)
