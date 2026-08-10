@@ -1,0 +1,64 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFrameworks>net10.0-maccatalyst</TargetFrameworks>
+		<RuntimeIdentifiers>maccatalyst-x64;maccatalyst-arm64</RuntimeIdentifiers>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
+		<OutputType>Library</OutputType>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<IsPackable>true</IsPackable>
+		<PackageId>Cloudflare.QuicheNet.NativeAssets.MacCatalyst</PackageId>
+		<Company>Cloudflare Inc.</Company>
+		<Description>A delicious C# wrapper for Cloudflare's quiche library</Description>
+		<PackageTags>quiche;networking;bindings;native;wrapper;quic</PackageTags>
+		<PackageLicenseExpression>MIT</PackageLicenseExpression>
+		<RepositoryUrl>https://github.com/IsaMorphic/Cloudflare.QuicheNet</RepositoryUrl>
+		<RepositoryType>git</RepositoryType>
+		<IncludeBuildOutput>false</IncludeBuildOutput>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+		<Compile Remove="runtimes/**" />
+		<EmbeddedResource Remove="runtimes/**" />
+		<None Remove="runtimes/**" />
+	</ItemGroup>
+
+	<PropertyGroup>
+		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'maccatalyst-x64'">x86_64-apple-ios-macabi</RustTargetTriple>
+		<RustTargetTriple Condition="'$(RuntimeIdentifier)' == 'maccatalyst-arm64'">aarch64-apple-ios-macabi</RustTargetTriple>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'maccatalyst-x64'">libquiche_bindgen.dylib</RustLibraryFileName>
+		<RustLibraryFileName Condition="'$(RuntimeIdentifier)' == 'maccatalyst-arm64'">libquiche_bindgen.dylib</RustLibraryFileName>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<RustTargetOutput Include="../quiche-bindgen/target/$(RustTargetTriple)/release/$(RustLibraryFileName)" />
+		<NativeLibs Include="runtimes/**" />
+		<None Include="@(NativeLibs)" PackagePath="runtimes/">
+			<Pack>true</Pack>
+			<PackageCopyToOutput>true</PackageCopyToOutput>
+			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+		</None>
+		<NativeReference Remove="*/**" />
+		<NativeReference Include="@(NativeLibs)" Kind="Dynamic" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="MinVer" Version="7.0.0">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+	</ItemGroup>
+
+	<Target Condition="'$(RuntimeIdentifier)' != ''" Name="rustc" BeforeTargets="PreBuildEvent">
+		<Exec WorkingDirectory="../quiche-bindgen" Command="rustup target add $(RustTargetTriple)" />
+
+		<Exec WorkingDirectory="../quiche-bindgen" Command="cargo build --target $(RustTargetTriple) --profile release" />
+
+		<Copy SourceFiles="@(RustTargetOutput)" DestinationFolder="runtimes/$(RuntimeIdentifier)/native" />
+	</Target>
+</Project>
