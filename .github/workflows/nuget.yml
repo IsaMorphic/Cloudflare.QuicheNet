@@ -14,7 +14,7 @@ jobs:
         os: [ubuntu-latest, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     permissions:
-      contents: write
+      contents: read
       id-token: write
     env:
       RUNTIME_ID_OS: |-
@@ -66,7 +66,7 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     permissions:
-      contents: write
+      contents: read
       id-token: write
     env:
       RUNTIME_ID_OS: |-
@@ -105,12 +105,12 @@ jobs:
         run: dotnet workload restore
       - name: Build for x64
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-x64
+      - name: Build for ARM64
+        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm64
       - name: Build for ARM (Android)
         if: matrix.os == 'ubuntu-latest'
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm
-      - name: Build for ARM64
-        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm64
-      - name: Build for ARM64 (iOS)
+      - name: Build for ARM64 (iOS, Device)
         if: matrix.os == 'macos-latest'
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ios-arm64
       - name: Create NuGet package (native)
