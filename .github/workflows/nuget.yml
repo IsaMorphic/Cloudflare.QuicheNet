@@ -39,7 +39,7 @@ jobs:
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: 10.0.x
-      - name: Install cross-compilation tools
+      - name: Install cross-compilation tools (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: cargo install cargo-cross --git https://github.com/zijiren233/cargo-cross
       - name: Restore workloads
@@ -101,19 +101,16 @@ jobs:
       - name: Install cross-compilation tools (Android)
         if: matrix.os == 'ubuntu-latest'
         run: cargo install cargo-ndk
-      - name: Install cross-compilation tools (iOS)
-        if: matrix.os == 'macos-latest'
-        run: cargo install cargo-lipo
       - name: Restore workloads
         run: dotnet workload restore
       - name: Build for x64
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-x64
-      - name: Build for ARM
+      - name: Build for ARM (Android)
         if: matrix.os == 'ubuntu-latest'
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm
       - name: Build for ARM64
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ${{ env.RUNTIME_ID_OS }}-arm64
-      - name: Build for ARM64 (Device)
+      - name: Build for ARM64 (iOS)
         if: matrix.os == 'macos-latest'
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --runtime ios-arm64
       - name: Create NuGet package (native)
