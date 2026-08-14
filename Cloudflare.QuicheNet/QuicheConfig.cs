@@ -6,11 +6,11 @@ using static Cloudflare.QuicheNet.QuicheLibrary;
 
 namespace Cloudflare.QuicheNet;
 
-public unsafe class QuicheConfig : IDisposable
+public class QuicheConfig : IDisposable
 {
     // quiche_config handle
 
-    internal quiche_config* NativePtr { get; private set; }
+    internal unsafe quiche_config* NativePtr { get; private set; }
 
     // quiche_config properties
 
@@ -18,7 +18,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetAckDelayExponent((ulong)value);
+            unsafe
+            {
+                NativePtr->SetAckDelayExponent((ulong)value);
+            }
         }
     }
 
@@ -26,7 +29,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetActiveConnectionIdLimit((ulong)value);
+            unsafe
+            {
+                NativePtr->SetActiveConnectionIdLimit((ulong)value);
+            }
         }
     }
 
@@ -34,7 +40,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetCcAlgorithm((size_t)(int)value);
+            unsafe
+            {
+                NativePtr->SetCcAlgorithm((size_t)(int)value);
+            }
         }
     }
 
@@ -42,7 +51,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetInitialCongestionWindowPackets((nuint)value);
+            unsafe
+            {
+                NativePtr->SetInitialCongestionWindowPackets((nuint)value);
+            }
         }
     }
 
@@ -50,7 +62,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetDisableActiveMigration(value);
+            unsafe
+            {
+                NativePtr->SetDisableActiveMigration(value);
+            }
         }
     }
 
@@ -58,7 +73,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->EnableHystart(value);
+            unsafe
+            {
+                NativePtr->EnableHystart(value);
+            }
         }
     }
 
@@ -66,7 +84,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->EnablePacing(value);
+            unsafe
+            {
+                NativePtr->EnablePacing(value);
+            }
         }
     }
 
@@ -74,7 +95,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetMaxAckDelay((ulong)value);
+            unsafe
+            {
+                NativePtr->SetMaxAckDelay((ulong)value);
+            }
         }
     }
 
@@ -82,7 +106,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetMaxAmplificationFactor((nuint)value);
+            unsafe
+            {
+                NativePtr->SetMaxAmplificationFactor((nuint)value);
+            }
         }
     }
 
@@ -90,7 +117,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetMaxIdleTimeout((ulong)value);
+            unsafe
+            {
+                NativePtr->SetMaxIdleTimeout((ulong)value);
+            }
         }
     }
 
@@ -98,7 +128,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetInitialMaxStreamsBidi((ulong)value);
+            unsafe
+            {
+                NativePtr->SetInitialMaxStreamsBidi((ulong)value);
+            }
         }
     }
 
@@ -106,7 +139,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetInitialMaxData((ulong)value);
+            unsafe
+            {
+                NativePtr->SetInitialMaxData((ulong)value);
+            }
         }
     }
 
@@ -114,7 +150,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetInitialMaxStreamDataBidiLocal((ulong)value);
+            unsafe
+            {
+                NativePtr->SetInitialMaxStreamDataBidiLocal((ulong)value);
+            }
         }
     }
 
@@ -122,7 +161,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetInitialMaxStreamDataBidiRemote((ulong)value);
+            unsafe
+            {
+                NativePtr->SetInitialMaxStreamDataBidiRemote((ulong)value);
+            }
         }
     }
 
@@ -130,7 +172,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetInitialMaxStreamDataUni((ulong)value);
+            unsafe
+            {
+                NativePtr->SetInitialMaxStreamDataUni((ulong)value);
+            }
         }
     }
 
@@ -138,7 +183,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetInitialMaxStreamsUni((ulong)value);
+            unsafe
+            {
+                NativePtr->SetInitialMaxStreamsUni((ulong)value);
+            }
         }
     }
 
@@ -146,7 +194,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetMaxPacingRate((ulong)value);
+            unsafe
+            {
+                NativePtr->SetMaxPacingRate((ulong)value);
+            }
         }
     }
 
@@ -154,7 +205,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetMaxRecvUdpPayloadSize((nuint)value);
+            unsafe
+            {
+                NativePtr->SetMaxRecvUdpPayloadSize((nuint)value);
+            }
         }
     }
 
@@ -162,7 +216,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->SetMaxSendUdpPayloadSize((nuint)value);
+            unsafe
+            {
+                NativePtr->SetMaxSendUdpPayloadSize((nuint)value);
+            }
         }
     }
 
@@ -170,7 +227,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->DiscoverPmtu(value);
+            unsafe
+            {
+                NativePtr->DiscoverPmtu(value);
+            }
         }
     }
 
@@ -178,7 +238,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->Grease(value);
+            unsafe
+            {
+                NativePtr->Grease(value);
+            }
         }
     }
 
@@ -186,7 +249,10 @@ public unsafe class QuicheConfig : IDisposable
     {
         set
         {
-            NativePtr->VerifyPeer(value);
+            unsafe
+            {
+                NativePtr->VerifyPeer(value);
+            }
         }
     }
 
@@ -195,60 +261,75 @@ public unsafe class QuicheConfig : IDisposable
         bool shouldLogKeys = false
         )
     {
-        NativePtr = quiche_config_new(PROTOCOL_VERSION);
-
-        if (isEarlyDataEnabled)
+        unsafe
         {
-            NativePtr->EnableEarlyData();
-        }
+            NativePtr = quiche_config_new(PROTOCOL_VERSION);
 
-        if (shouldLogKeys)
-        {
-            NativePtr->LogKeys();
+            if (isEarlyDataEnabled)
+            {
+                NativePtr->EnableEarlyData();
+            }
+
+            if (shouldLogKeys)
+            {
+                NativePtr->LogKeys();
+            }
         }
     }
 
     public void LoadCertificateChainFromPemFile(string filePath)
     {
-        fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+        unsafe
         {
-            QuicheException.ThrowIfError(
-                (QuicheError)NativePtr->LoadCertChainFromPemFile(filePathPtr),
-                "Failed to load certificate chain from provided PEM file!"
-                );
+            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+            {
+                QuicheException.ThrowIfError(
+                    (QuicheError)NativePtr->LoadCertChainFromPemFile(filePathPtr),
+                    "Failed to load certificate chain from provided PEM file!"
+                    );
+            }
         }
     }
 
     public void LoadPrivateKeyFromPemFile(string filePath)
     {
-        fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+        unsafe
         {
-            QuicheException.ThrowIfError(
-                (QuicheError)NativePtr->LoadPrivKeyFromPemFile(filePathPtr),
-                "Failed to load private key from provided PEM file!"
-                );
+            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+            {
+                QuicheException.ThrowIfError(
+                    (QuicheError)NativePtr->LoadPrivKeyFromPemFile(filePathPtr),
+                    "Failed to load private key from provided PEM file!"
+                    );
+            }
         }
     }
 
     public void LoadVerifyLocationsFromDirectory(string path)
     {
-        fixed (byte* pathPtr = Encoding.UTF8.GetBytes([.. path.ToCharArray(), '\u0000']))
+        unsafe
         {
-            QuicheException.ThrowIfError(
-                (QuicheError)NativePtr->LoadVerifyLocationsFromDirectory(pathPtr),
-                "Failed to load trusted CA locations from provided directory!"
-                );
+            fixed (byte* pathPtr = Encoding.UTF8.GetBytes([.. path.ToCharArray(), '\u0000']))
+            {
+                QuicheException.ThrowIfError(
+                    (QuicheError)NativePtr->LoadVerifyLocationsFromDirectory(pathPtr),
+                    "Failed to load trusted CA locations from provided directory!"
+                    );
+            }
         }
     }
 
     public void LoadVerifyLocationsFromFile(string filePath)
     {
-        fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+        unsafe
         {
-            QuicheException.ThrowIfError(
-                (QuicheError)NativePtr->LoadVerifyLocationsFromFile(filePathPtr),
-                "Failed to load trusted CA locations from provided file!"
-                );
+            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+            {
+                QuicheException.ThrowIfError(
+                    (QuicheError)NativePtr->LoadVerifyLocationsFromFile(filePathPtr),
+                    "Failed to load trusted CA locations from provided file!"
+                    );
+            }
         }
     }
 
@@ -260,21 +341,27 @@ public unsafe class QuicheConfig : IDisposable
             protoList.AddRange([(byte)proto.Length, .. Encoding.UTF8.GetBytes(proto)]);
         }
 
-        fixed (byte* protosPtr = protoList.ToArray())
+        unsafe
         {
-            QuicheException.ThrowIfError((QuicheError)NativePtr->
-                SetApplicationProtos(protosPtr, (nuint)protoList.Count),
-                "Failed to set application protocols for this instance.");
+            fixed (byte* protosPtr = protoList.ToArray())
+            {
+                QuicheException.ThrowIfError((QuicheError)NativePtr->
+                    SetApplicationProtos(protosPtr, (nuint)protoList.Count),
+                    "Failed to set application protocols for this instance.");
+            }
         }
     }
 
     public void SetTicketKey(byte[] keyBytes)
     {
-        fixed (byte* keyBytesPtr = keyBytes)
+        unsafe
         {
-            QuicheException.ThrowIfError((QuicheError)NativePtr->
-                SetTicketKey(keyBytesPtr, (nuint)keyBytes.Length),
-                "Failed to set ticket key contents for this instance.");
+            fixed (byte* keyBytesPtr = keyBytes)
+            {
+                QuicheException.ThrowIfError((QuicheError)NativePtr->
+                    SetTicketKey(keyBytesPtr, (nuint)keyBytes.Length),
+                    "Failed to set ticket key contents for this instance.");
+            }
         }
     }
 
@@ -284,12 +371,15 @@ public unsafe class QuicheConfig : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
-        if (!disposedValue)
+        unsafe
         {
-            NativePtr->Free();
-            NativePtr = null;
+            if (!disposedValue)
+            {
+                NativePtr->Free();
+                NativePtr = null;
 
-            disposedValue = true;
+                disposedValue = true;
+            }
         }
     }
 

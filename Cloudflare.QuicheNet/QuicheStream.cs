@@ -117,7 +117,7 @@ namespace Cloudflare.QuicheNet
 
                         bytesTotal += bytesRead;
                     }
-                    else 
+                    else
                     {
                         break;
                     }
@@ -143,7 +143,7 @@ namespace Cloudflare.QuicheNet
 
                 sendPipe.Writer.FlushAsync();
             }
-            else 
+            else
             {
                 throw new EndOfStreamException("Cannot write to a closed stream.");
             }
@@ -157,54 +157,56 @@ namespace Cloudflare.QuicheNet
         public override void SetLength(long value) =>
             throw new NotSupportedException();
 
-        public unsafe override void Close()
+        public override void Close()
         {
             base.Close();
-
-            try
+            unsafe
             {
-                if (recvPipe is not null && sendPipe is not null)
+                try
                 {
-                    recvPipe.Writer.Complete();
+                    if (recvPipe is not null && sendPipe is not null)
+                    {
+                        recvPipe.Writer.Complete();
 
-                    QuicheException.ThrowIfError((QuicheError)
-                        conn.NativePtr->StreamShutdown(streamId,
-                        (int)Shutdown.Read, 0x00),
-                        $"Failed to shutdown reading side of stream! (ID: {streamId:X16})"
-                        );
+                        QuicheException.ThrowIfError((QuicheError)
+                            conn.NativePtr->StreamShutdown(streamId,
+                            (int)Shutdown.Read, 0x00),
+                            $"Failed to shutdown reading side of stream! (ID: {streamId:X16})"
+                            );
 
-                    sendPipe.Writer.Complete();
+                        sendPipe.Writer.Complete();
 
-                    QuicheException.ThrowIfError((QuicheError)
-                        conn.NativePtr->StreamShutdown(streamId,
-                        (int)Shutdown.Write, 0x00),
-                        $"Failed to shutdown writing side of stream! (ID: {streamId:X16})"
-                        );
+                        QuicheException.ThrowIfError((QuicheError)
+                            conn.NativePtr->StreamShutdown(streamId,
+                            (int)Shutdown.Write, 0x00),
+                            $"Failed to shutdown writing side of stream! (ID: {streamId:X16})"
+                            );
+                    }
+                    else if (recvPipe is not null)
+                    {
+                        recvPipe.Writer.Complete();
+
+                        QuicheException.ThrowIfError((QuicheError)
+                            conn.NativePtr->StreamShutdown(streamId,
+                            (int)Shutdown.Read, 0x00),
+                            $"Failed to shutdown reading side of stream! (ID: {streamId:X16})"
+                            );
+                    }
+                    else if (sendPipe is not null)
+                    {
+                        sendPipe.Writer.Complete();
+
+                        QuicheException.ThrowIfError((QuicheError)
+                            conn.NativePtr->StreamShutdown(streamId,
+                            (int)Shutdown.Write, 0x00),
+                            $"Failed to shutdown writing side of stream! (ID: {streamId:X16})"
+                            );
+                    }
                 }
-                else if (recvPipe is not null)
-                {
-                    recvPipe.Writer.Complete();
-
-                    QuicheException.ThrowIfError((QuicheError)
-                        conn.NativePtr->StreamShutdown(streamId,
-                        (int)Shutdown.Read, 0x00),
-                        $"Failed to shutdown reading side of stream! (ID: {streamId:X16})"
-                        );
-                }
-                else if (sendPipe is not null)
-                {
-                    sendPipe.Writer.Complete();
-
-                    QuicheException.ThrowIfError((QuicheError)
-                        conn.NativePtr->StreamShutdown(streamId,
-                        (int)Shutdown.Write, 0x00),
-                        $"Failed to shutdown writing side of stream! (ID: {streamId:X16})"
-                        );
-                }
+                catch (QuicheException ex)
+                when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
+                { }
             }
-            catch (QuicheException ex)
-            when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
-            { }
         }
     }
 }

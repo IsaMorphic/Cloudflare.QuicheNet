@@ -14,12 +14,15 @@ public static class QuicheLibrary
 
     public const int MAX_BUFFER_LEN = 1024 * 1024;
 
-    public unsafe static string VersionCode
+    public static string VersionCode
     {
         get
         {
-            sbyte* versionCodePtr = (sbyte*)quiche_version();
-            return new string(versionCodePtr);
+            unsafe
+            {
+                sbyte* versionCodePtr = (sbyte*)quiche_version();
+                return new string(versionCodePtr);
+            }
         }
     }
 }
