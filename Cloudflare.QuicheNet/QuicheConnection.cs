@@ -21,60 +21,66 @@ public class QuicheConnection : IDisposable
         return buf is null ? default : (buf.Value.Pin(), buf.Value.Length);
     }
 
-    internal unsafe static QuicheConnection Accept(Socket socket,
+    internal static QuicheConnection Accept(Socket socket,
         EndPoint remoteEndPoint, ReadOnlyMemory<byte> initialData,
         QuicheConfig config, byte[]? cid = null)
     {
-        EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
-            "Given socket was not bound to a valid local endpoint!", nameof(socket));
-
-        var (local, local_len) = GetSocketAddress(localEndPoint);
-        var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
-
-        using (local)
-        using (remote)
+        unsafe
         {
-            byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
-                .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
-            fixed (byte* scidPtr = scidBuf)
+            EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
+                "Given socket was not bound to a valid local endpoint!", nameof(socket));
+
+            var (local, local_len) = GetSocketAddress(localEndPoint);
+            var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
+
+            using (local)
+            using (remote)
             {
-                return new(quiche_accept(
-                    scidPtr, (nuint)scidBuf.Length, null, 0,
-                    (sockaddr*)local.Pointer, (size_t)local_len,
-                    (sockaddr*)remote.Pointer, (size_t)remote_len,
-                    config.NativePtr),
-                    socket, remoteEndPoint,
-                    initialData, scidBuf);
+                byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
+                    .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
+                fixed (byte* scidPtr = scidBuf)
+                {
+                    return new(quiche_accept(
+                        scidPtr, (nuint)scidBuf.Length, null, 0,
+                        (sockaddr*)local.Pointer, (size_t)local_len,
+                        (sockaddr*)remote.Pointer, (size_t)remote_len,
+                        config.NativePtr),
+                        socket, remoteEndPoint,
+                        initialData, scidBuf);
+                }
             }
         }
     }
 
-    public unsafe static QuicheConnection Connect(Socket socket, EndPoint remoteEndPoint,
+    public static QuicheConnection Connect(Socket socket, EndPoint remoteEndPoint,
         QuicheConfig config, string? hostname = null, byte[]? cid = null)
     {
-        EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
-            "Given socket was not bound to a valid local endpoint!", nameof(socket));
-
-        var (local, local_len) = GetSocketAddress(localEndPoint);
-        var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
-
-        using (local)
-        using (remote)
+        unsafe
         {
-            byte[] hostnameBuf = Encoding.UTF8.GetBytes([.. hostname?.ToCharArray() ?? [], '\u0000']);
-            byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
-                .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
+            EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
+                "Given socket was not bound to a valid local endpoint!", nameof(socket));
 
-            fixed (byte* hostnamePtr = hostnameBuf)
-            fixed (byte* scidPtr = scidBuf)
+            var (local, local_len) = GetSocketAddress(localEndPoint);
+            var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
+
+            using (local)
+            using (remote)
             {
-                return new(quiche_connect(hostnamePtr,
-                    scidPtr, (nuint)scidBuf.Length,
-                    (sockaddr*)local.Pointer, (size_t)local_len,
-                    (sockaddr*)remote.Pointer, (size_t)remote_len,
-                    config.NativePtr),
-                    socket, remoteEndPoint,
-                    ReadOnlyMemory<byte>.Empty, scidBuf);
+                byte[] hostnameBuf = Encoding.UTF8.GetBytes([.. hostname?.ToCharArray() ?? [], '\u0000']);
+                byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
+                    .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
+
+                fixed (byte* hostnamePtr = hostnameBuf)
+                fixed (byte* scidPtr = scidBuf)
+                {
+                    return new(quiche_connect(hostnamePtr,
+                        scidPtr, (nuint)scidBuf.Length,
+                        (sockaddr*)local.Pointer, (size_t)local_len,
+                        (sockaddr*)remote.Pointer, (size_t)remote_len,
+                        config.NativePtr),
+                        socket, remoteEndPoint,
+                        ReadOnlyMemory<byte>.Empty, scidBuf);
+                }
             }
         }
     }
@@ -102,24 +108,30 @@ public class QuicheConnection : IDisposable
 
     public Task ConnectionEstablished => establishedTcs.Task;
 
-    public unsafe bool IsClosed
+    public bool IsClosed
     {
         get
         {
-            lock (this)
+            unsafe
             {
-                return NativePtr is not null && NativePtr->IsClosed();
+                lock (this)
+                {
+                    return NativePtr is not null && NativePtr->IsClosed();
+                }
             }
         }
     }
 
-    public unsafe bool IsServer
+    public bool IsServer
     {
         get
         {
-            lock (this)
+            unsafe
             {
-                return NativePtr is not null && NativePtr->IsServer();
+                lock (this)
+                {
+                    return NativePtr is not null && NativePtr->IsServer();
+                }
             }
         }
     }
@@ -231,7 +243,7 @@ public class QuicheConnection : IDisposable
             catch (QuicheException ex)
             when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
             {
-                if(IsClosed) { throw; }
+                if (IsClosed) { throw; }
                 await Task.Delay(75, cancellationToken);
                 continue;
             }
@@ -292,7 +304,7 @@ public class QuicheConnection : IDisposable
                     {
                         str.Flush();
                     }
-                    
+
                     await Task.Delay(75, cancellationToken);
                     continue;
                 }
@@ -339,7 +351,7 @@ public class QuicheConnection : IDisposable
             catch (QuicheException ex)
             when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
             {
-                if(IsClosed) { throw; }
+                if (IsClosed) { throw; }
                 await Task.Delay(75, cancellationToken);
                 continue;
             }
@@ -515,7 +527,7 @@ public class QuicheConnection : IDisposable
             catch (QuicheException ex)
                 when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
             {
-                if(IsClosed) { throw; }
+                if (IsClosed) { throw; }
                 await Task.Delay(75, cancellationToken);
                 continue;
             }
@@ -538,11 +550,14 @@ public class QuicheConnection : IDisposable
     private QuicheStream GetStream(ulong streamId) =>
         streamMap.GetOrAdd(streamId, id => new(this, id));
 
-    internal unsafe bool IsStreamFinished(ulong streamId)
+    internal bool IsStreamFinished(ulong streamId)
     {
-        lock (this)
+        unsafe
         {
-            return NativePtr is not null && NativePtr->StreamFinished(streamId);
+            lock (this)
+            {
+                return NativePtr is not null && NativePtr->StreamFinished(streamId);
+            }
         }
     }
 
@@ -572,81 +587,84 @@ public class QuicheConnection : IDisposable
 
     private bool disposedValue;
 
-    protected unsafe virtual void Dispose(bool disposing)
+    protected virtual void Dispose(bool disposing)
     {
-        bool isNativeHandleValid;
-        lock (this)
+        unsafe
         {
-            isNativeHandleValid = NativePtr is not null;
-        }
-
-        if (!disposedValue && isNativeHandleValid)
-        {
-            if (disposing)
+            bool isNativeHandleValid;
+            lock (this)
             {
-                try
-                {
-                    cts.Cancel();
-                    Task.WhenAll(recvTask, sendTask,
-                        recvStreamTask, sendStreamTask,
-                        listenTask ?? Task.CompletedTask
-                        ).Wait();
-                }
-                catch (AggregateException ex)
-                when (ex.InnerExceptions.All(
-                    x => x is OperationCanceledException ||
-                    x is QuicheException q && q.ErrorCode == QuicheError.QUICHE_ERR_DONE
-                    ))
-                { }
+                isNativeHandleValid = NativePtr is not null;
+            }
 
-                foreach (var (_, stream) in streamMap)
+            if (!disposedValue && isNativeHandleValid)
+            {
+                if (disposing)
                 {
-                    stream.Dispose();
-                }
-
-                try
-                {
-                    lock (this)
+                    try
                     {
-                        int errorResult;
-                        byte[] reasonBuf = Encoding.UTF8.GetBytes("Connection was implicitly closed for user initiated disposal.");
-                        fixed (byte* reasonPtr = reasonBuf)
+                        cts.Cancel();
+                        Task.WhenAll(recvTask, sendTask,
+                            recvStreamTask, sendStreamTask,
+                            listenTask ?? Task.CompletedTask
+                            ).Wait();
+                    }
+                    catch (AggregateException ex)
+                    when (ex.InnerExceptions.All(
+                        x => x is OperationCanceledException ||
+                        x is QuicheException q && q.ErrorCode == QuicheError.QUICHE_ERR_DONE
+                        ))
+                    { }
+
+                    foreach (var (_, stream) in streamMap)
+                    {
+                        stream.Dispose();
+                    }
+
+                    try
+                    {
+                        lock (this)
                         {
-                            errorResult = NativePtr->Close(true, 0x00, reasonPtr, (nuint)reasonBuf.Length);
-                            QuicheException.ThrowIfError((QuicheError)errorResult, "Failed to close connection!");
+                            int errorResult;
+                            byte[] reasonBuf = Encoding.UTF8.GetBytes("Connection was implicitly closed for user initiated disposal.");
+                            fixed (byte* reasonPtr = reasonBuf)
+                            {
+                                errorResult = NativePtr->Close(true, 0x00, reasonPtr, (nuint)reasonBuf.Length);
+                                QuicheException.ThrowIfError((QuicheError)errorResult, "Failed to close connection!");
+                            }
+                        }
+                    }
+                    catch (QuicheException ex)
+                    when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
+                    { }
+                    finally
+                    {
+                        cts.Dispose();
+
+                        recvQueue.Clear();
+                        sendQueue.Clear();
+
+                        streamMap.Clear();
+
+                        if (!IsServer)
+                        {
+                            socket.Dispose();
                         }
                     }
                 }
-                catch (QuicheException ex)
-                when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
-                { }
-                finally
+
+                lock (this)
                 {
-                    cts.Dispose();
-
-                    recvQueue.Clear();
-                    sendQueue.Clear();
-
-                    streamMap.Clear();
-
-                    if (!IsServer)
+                    if (NativePtr is not null)
                     {
-                        socket.Dispose();
+                        NativePtr->Free();
+                        NativePtr = null;
                     }
                 }
             }
 
-            lock (this)
-            {
-                if (NativePtr is not null)
-                {
-                    NativePtr->Free();
-                    NativePtr = null;
-                }
-            }
+            disposedValue = true;
         }
-
-        disposedValue = true;
     }
 
     ~QuicheConnection()
