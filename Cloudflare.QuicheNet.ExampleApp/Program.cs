@@ -33,9 +33,8 @@ async Task RunListenerAsync(CancellationToken cancellationToken)
     // Server logic
     using (QuicheConnection client = await listener.AcceptAsync(cancellationToken))
     {
-        await client.ConnectionEstablished;
         await RunServerAsync(client, cancellationToken); 
-        cts.Cancel();
+        cts.Cancel(); // Stop listening
     }
 
     // Wait for exit
@@ -78,10 +77,9 @@ async Task RunClientAsync(CancellationToken cancellationToken)
     config.SetApplicationProtocols("test");
 
     // Open client connection
-    using QuicheConnection client = QuicheConnection.Connect(socket, new IPEndPoint(IPAddress.Loopback, 8080), config, "localhost");
-    await client.ConnectionEstablished;
-
-    // Accept inbound download stream
+    using (QuicheConnection client = await QuicheConnection.ConnectAsync(
+        socket, new IPEndPoint(IPAddress.Loopback, 8080), config, 
+        "localhost", cancellationToken: cancellationToken)) 
     using (QuicheStream stream = await client.AcceptInboundStreamAsync(cancellationToken))
     using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
     {

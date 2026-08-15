@@ -388,3 +388,4 @@ Cargo.lock
 runtimes/
 quiche*.rs
 *.g.cs
+*.pem
