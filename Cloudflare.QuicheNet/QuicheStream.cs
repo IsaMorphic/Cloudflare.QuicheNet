@@ -27,9 +27,9 @@ namespace Cloudflare.QuicheNet
 
         private bool firstReadFlag, firstWriteFlag;
 
-        public override bool CanRead => !conn.IsClosed && !(firstReadFlag && conn.IsStreamFinished(streamId));
+        public override bool CanRead => !conn.IsClosed && recvPipe is not null && !(firstReadFlag && conn.IsStreamFinished(streamId));
 
-        public override bool CanWrite => !conn.IsClosed && !(firstWriteFlag && conn.IsStreamFinished(streamId));
+        public override bool CanWrite => !conn.IsClosed && sendPipe is not null && !(firstWriteFlag && conn.IsStreamFinished(streamId));
 
         public override bool CanSeek => false;
 
@@ -49,12 +49,12 @@ namespace Cloudflare.QuicheNet
             bool isPeerInitiated = ((streamId & 1) == 0) ^ conn.IsServer;
             bool isBidirectional = (streamId & 2) == 0;
 
-            if (isPeerInitiated || isBidirectional)
+            if (!isPeerInitiated || isBidirectional)
             {
                 recvPipe = new Pipe();
             }
 
-            if (!isPeerInitiated || isBidirectional)
+            if (isPeerInitiated || isBidirectional)
             {
                 sendPipe = new Pipe();
             }

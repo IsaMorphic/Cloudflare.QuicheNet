@@ -47,7 +47,12 @@ public class QuicheListener : IDisposable
         }
     }
 
-    public async Task<QuicheConnection> AcceptAsync(CancellationToken cancellationToken)
+    public Task ListenAsync()
+    {
+        return ListenAsync(CancellationToken.None);
+    }
+
+    public async Task<QuicheConnection> AcceptAsync(CancellationToken cancellationToken = default)
     {
         return await connChannel.Reader.ReadAsync(cancellationToken);
     }
