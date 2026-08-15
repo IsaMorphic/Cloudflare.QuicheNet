@@ -7,7 +7,6 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
-
 using Cloudflare.Quiche;
 using static Cloudflare.Quiche.NativeMethods;
 
@@ -116,7 +115,21 @@ public class QuicheConnection : IDisposable
             {
                 lock (this)
                 {
-                    return NativePtr is not null && NativePtr->IsClosed();
+                    return NativePtr is null || NativePtr->IsClosed();
+                }
+            }
+        }
+    }
+
+    public bool IsDraining
+    {
+        get
+        {
+            unsafe
+            {
+                lock (this)
+                {
+                    return NativePtr is not null && NativePtr->IsDraining();
                 }
             }
         }
@@ -203,11 +216,16 @@ public class QuicheConnection : IDisposable
         byte[] packetBuf = new byte[QuicheLibrary.MAX_DATAGRAM_LEN];
 
         SendScheduleInfo info = new() { SendBuffer = packetBuf };
-        Timer timer = new Timer(SendPacket, info, Timeout.Infinite, Timeout.Infinite);
+        using Timer timer = new Timer(SendPacket, info, Timeout.Infinite, Timeout.Infinite);
 
         while (!cancellationToken.IsCancellationRequested)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (IsClosed)
+            {
+                throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
+            }
+
             try
             {
                 long resultOrError;
@@ -264,10 +282,14 @@ public class QuicheConnection : IDisposable
     {
         while (!cancellationToken.IsCancellationRequested)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsClosed)
+            {
+                throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
+            }
+
             try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 ulong streamId;
                 QuicheStream? stream;
                 if (sendQueue.Any())
@@ -374,6 +396,11 @@ public class QuicheConnection : IDisposable
         while (!cancellationToken.IsCancellationRequested)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            if (IsClosed)
+            {
+                throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
+            }
+
             try
             {
                 bool isConnEstablished, isInEarlyData;
@@ -399,9 +426,9 @@ public class QuicheConnection : IDisposable
                     await Task.Delay(75, cancellationToken);
                     continue;
                 }
-                else if (IsClosed)
+                else if (IsClosed) 
                 {
-                    throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection timed out from inactivity.");
+                    throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
                 }
                 else
                 {
@@ -459,10 +486,14 @@ public class QuicheConnection : IDisposable
         byte[] streamBuf = new byte[QuicheLibrary.MAX_BUFFER_LEN];
         while (!cancellationToken.IsCancellationRequested)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsClosed)
+            {
+                throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
+            }
+
             try
             {
-                cancellationToken.ThrowIfCancellationRequested();
-
                 long streamIdOrNone;
                 bool isConnEstablished, isInEarlyData;
                 unsafe
@@ -488,8 +519,6 @@ public class QuicheConnection : IDisposable
                     await Task.Delay(75, cancellationToken);
                     continue;
                 }
-
-                await streamChannel.Writer.WriteAsync(stream, cancellationToken);
 
                 bool streamFinished = false;
                 long recvCount = long.MaxValue;
@@ -548,7 +577,12 @@ public class QuicheConnection : IDisposable
     }
 
     private QuicheStream GetStream(ulong streamId) =>
-        streamMap.GetOrAdd(streamId, id => new(this, id));
+        streamMap.GetOrAdd(streamId, id =>
+        {
+            QuicheStream stream = new(this, id);
+            SpinWait.SpinUntil(() => streamChannel.Writer.TryWrite(stream));
+            return stream;
+        });
 
     internal bool IsStreamFinished(ulong streamId)
     {
@@ -599,23 +633,10 @@ public class QuicheConnection : IDisposable
 
             if (!disposedValue && isNativeHandleValid)
             {
+                disposedValue = true;
+
                 if (disposing)
                 {
-                    try
-                    {
-                        cts.Cancel();
-                        Task.WhenAll(recvTask, sendTask,
-                            recvStreamTask, sendStreamTask,
-                            listenTask ?? Task.CompletedTask
-                            ).Wait();
-                    }
-                    catch (AggregateException ex)
-                    when (ex.InnerExceptions.All(
-                        x => x is OperationCanceledException ||
-                        x is QuicheException q && q.ErrorCode == QuicheError.QUICHE_ERR_DONE
-                        ))
-                    { }
-
                     foreach (var (_, stream) in streamMap)
                     {
                         stream.Dispose();
@@ -633,22 +654,29 @@ public class QuicheConnection : IDisposable
                                 QuicheException.ThrowIfError((QuicheError)errorResult, "Failed to close connection!");
                             }
                         }
+
+                        Task.WaitAll(recvTask, sendTask, recvStreamTask, sendStreamTask);
                     }
+                    catch (AggregateException ex)
+                    when (ex.InnerExceptions.All(
+                        x => x is OperationCanceledException ||
+                        x is QuicheException { ErrorCode: QuicheError.QUICHE_ERR_DONE }
+                        ))
+                    { }
                     catch (QuicheException ex)
                     when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
                     { }
                     finally
                     {
-                        cts.Dispose();
-
-                        recvQueue.Clear();
-                        sendQueue.Clear();
-
-                        streamMap.Clear();
-
-                        if (!IsServer)
+                        lock (this)
                         {
-                            socket.Dispose();
+                            cts.Cancel();
+                            cts.Dispose();
+
+                            recvQueue.Clear();
+                            sendQueue.Clear();
+
+                            streamMap.Clear();
                         }
                     }
                 }
@@ -662,8 +690,6 @@ public class QuicheConnection : IDisposable
                     }
                 }
             }
-
-            disposedValue = true;
         }
     }
 

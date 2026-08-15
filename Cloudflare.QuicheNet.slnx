@@ -1,4 +1,5 @@
 <Solution>
+  <Project Path="Cloudflare.QuicheNet.ExampleApp/Cloudflare.QuicheNet.ExampleApp.csproj" />
   <Project Path="Cloudflare.QuicheNet.NativeAssets.Android/Cloudflare.QuicheNet.NativeAssets.Android.csproj" />
   <Project Path="Cloudflare.QuicheNet.NativeAssets.iOS/Cloudflare.QuicheNet.NativeAssets.iOS.csproj" />
   <Project Path="Cloudflare.QuicheNet.NativeAssets.Linux/Cloudflare.QuicheNet.NativeAssets.Linux.csproj" />
