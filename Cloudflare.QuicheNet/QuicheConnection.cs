@@ -24,19 +24,19 @@ public class QuicheConnection : IDisposable
         EndPoint remoteEndPoint, ReadOnlyMemory<byte> initialData,
         QuicheConfig config, byte[]? cid = null)
     {
-        unsafe
+        EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
+            "Given socket was not bound to a valid local endpoint!", nameof(socket));
+
+        var (local, local_len) = GetSocketAddress(localEndPoint);
+        var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
+
+        using (local)
+        using (remote)
         {
-            EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
-                "Given socket was not bound to a valid local endpoint!", nameof(socket));
-
-            var (local, local_len) = GetSocketAddress(localEndPoint);
-            var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
-
-            using (local)
-            using (remote)
+            byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
+                .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
+            unsafe
             {
-                byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
-                    .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
                 fixed (byte* scidPtr = scidBuf)
                 {
                     return new(quiche_accept(
@@ -51,28 +51,28 @@ public class QuicheConnection : IDisposable
         }
     }
 
-    public static QuicheConnection Connect(Socket socket, EndPoint remoteEndPoint,
-        QuicheConfig config, string? hostname = null, byte[]? cid = null)
+    public static async Task<QuicheConnection> ConnectAsync(Socket socket, EndPoint remoteEndPoint,
+        QuicheConfig config, string? hostname = null, byte[]? cid = null, CancellationToken cancellationToken = default)
     {
-        unsafe
+        EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
+            "Given socket was not bound to a valid local endpoint!", nameof(socket));
+
+        var (local, local_len) = GetSocketAddress(localEndPoint);
+        var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
+
+        using (local)
+        using (remote)
         {
-            EndPoint localEndPoint = socket.LocalEndPoint ?? throw new ArgumentException(
-                "Given socket was not bound to a valid local endpoint!", nameof(socket));
-
-            var (local, local_len) = GetSocketAddress(localEndPoint);
-            var (remote, remote_len) = GetSocketAddress(remoteEndPoint);
-
-            using (local)
-            using (remote)
+            QuicheConnection conn;
+            byte[] hostnameBuf = Encoding.UTF8.GetBytes([.. hostname?.ToCharArray() ?? [], '\u0000']);
+            byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
+                .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
+            unsafe
             {
-                byte[] hostnameBuf = Encoding.UTF8.GetBytes([.. hostname?.ToCharArray() ?? [], '\u0000']);
-                byte[] scidBuf = (byte[]?)cid?.Clone() ?? RandomNumberGenerator
-                    .GetBytes((int)QuicheLibrary.MAX_CONN_ID_LEN);
-
                 fixed (byte* hostnamePtr = hostnameBuf)
                 fixed (byte* scidPtr = scidBuf)
                 {
-                    return new(quiche_connect(hostnamePtr,
+                    conn = new(quiche_connect(hostnamePtr,
                         scidPtr, (nuint)scidBuf.Length,
                         (sockaddr*)local.Pointer, (size_t)local_len,
                         (sockaddr*)remote.Pointer, (size_t)remote_len,
@@ -81,6 +81,9 @@ public class QuicheConnection : IDisposable
                         ReadOnlyMemory<byte>.Empty, scidBuf);
                 }
             }
+
+            await conn.ConnectionEstablished.WaitAsync(cancellationToken);
+            return conn;
         }
     }
 
@@ -105,7 +108,7 @@ public class QuicheConnection : IDisposable
 
     internal unsafe quiche_conn* NativePtr { get; private set; }
 
-    public Task ConnectionEstablished => establishedTcs.Task;
+    internal Task ConnectionEstablished => establishedTcs.Task;
 
     public bool IsClosed
     {
@@ -116,20 +119,6 @@ public class QuicheConnection : IDisposable
                 lock (this)
                 {
                     return NativePtr is null || NativePtr->IsClosed();
-                }
-            }
-        }
-    }
-
-    public bool IsDraining
-    {
-        get
-        {
-            unsafe
-            {
-                lock (this)
-                {
-                    return NativePtr is not null && NativePtr->IsDraining();
                 }
             }
         }
@@ -426,7 +415,7 @@ public class QuicheConnection : IDisposable
                     await Task.Delay(75, cancellationToken);
                     continue;
                 }
-                else if (IsClosed) 
+                else if (IsClosed)
                 {
                     throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
                 }

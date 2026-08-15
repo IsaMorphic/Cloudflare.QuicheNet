@@ -30,7 +30,6 @@ _ = Task.Run(listener.ListenAsync);
 
 // Wait for client to connect
 QuicheConnection client = await listener.AcceptAsync();
-await client.ConnectionEstablished;
 
 // Accept inbound client stream
 QuicheStream stream = await client.AcceptInboundStreamAsync();
@@ -56,8 +55,7 @@ QuicheConfig config = new QuicheConfig
 };
 
 // Initiate QUIC connection with server
-QuicheConnection client = QuicheConnection.Connect(socket, /* server endpoint here */, config);
-await client.ConnectionEstablished;
+QuicheConnection client = QuicheConnection.ConnectAsync(socket, /* server endpoint here */, config);
 
 // Accept inbound server stream
 QuicheStream stream = await client.AcceptInboundStreamAsync();
