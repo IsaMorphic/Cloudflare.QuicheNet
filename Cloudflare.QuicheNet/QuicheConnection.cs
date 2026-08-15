@@ -657,16 +657,16 @@ public class QuicheConnection : IDisposable
                     { }
                     finally
                     {
-                        lock (this)
+                        if (!cts.IsCancellationRequested)
                         {
                             cts.Cancel();
                             cts.Dispose();
-
-                            recvQueue.Clear();
-                            sendQueue.Clear();
-
-                            streamMap.Clear();
                         }
+
+                        recvQueue.Clear();
+                        sendQueue.Clear();
+
+                        streamMap.Clear();
                     }
                 }
 
