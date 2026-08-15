@@ -7,6 +7,7 @@
 		<AllowUnsafeBlocks>True</AllowUnsafeBlocks>
 		<OutputType>Library</OutputType>
 		<MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
+		<IsNuGetBuild>false</IsNuGetBuild>
 	</PropertyGroup>
 
 	<PropertyGroup>
@@ -45,31 +46,31 @@
 	<ItemGroup>
 		<ProjectReference Condition="'$(TargetFramework)' == 'net10.0'"
 			Include="../Cloudflare.QuicheNet.NativeAssets.Linux/Cloudflare.QuicheNet.NativeAssets.Linux.csproj">
-			<IncludeAssets>runtime; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<ReferenceOutputAssembly>$(IsNuGetBuild)</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Condition="'$(TargetFramework)' == 'net10.0'"
 			Include="../Cloudflare.QuicheNet.NativeAssets.macOS/Cloudflare.QuicheNet.NativeAssets.macOS.csproj">
-			<IncludeAssets>runtime; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<ReferenceOutputAssembly>$(IsNuGetBuild)</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Condition="'$(TargetFramework)' == 'net10.0'"
 			Include="../Cloudflare.QuicheNet.NativeAssets.Win32/Cloudflare.QuicheNet.NativeAssets.Win32.csproj">
-			<IncludeAssets>runtime; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<ReferenceOutputAssembly>$(IsNuGetBuild)</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Condition="'$(TargetFramework)' == 'net10.0-windows'"
 			Include="../Cloudflare.QuicheNet.NativeAssets.Win32/Cloudflare.QuicheNet.NativeAssets.Win32.csproj">
-			<IncludeAssets>runtime; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<ReferenceOutputAssembly>$(IsNuGetBuild)</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Condition="'$(TargetFramework)' == 'net10.0-macos'"
 			Include="../Cloudflare.QuicheNet.NativeAssets.macOS/Cloudflare.QuicheNet.NativeAssets.macOS.csproj">
-			<IncludeAssets>runtime; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<ReferenceOutputAssembly>$(IsNuGetBuild)</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Condition="'$(TargetFramework)' == 'net10.0-android'"
 			Include="../Cloudflare.QuicheNet.NativeAssets.Android/Cloudflare.QuicheNet.NativeAssets.Android.csproj">
-			<IncludeAssets>runtime; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<ReferenceOutputAssembly>$(IsNuGetBuild)</ReferenceOutputAssembly>
 		</ProjectReference>
 		<ProjectReference Condition="'$(TargetFramework)' == 'net10.0-ios'"
 			Include="../Cloudflare.QuicheNet.NativeAssets.iOS/Cloudflare.QuicheNet.NativeAssets.iOS.csproj">
-			<IncludeAssets>runtime; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+			<ReferenceOutputAssembly>$(IsNuGetBuild)</ReferenceOutputAssembly>
 		</ProjectReference>
 	</ItemGroup>
 </Project>

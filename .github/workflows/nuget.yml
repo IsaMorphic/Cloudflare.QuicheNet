@@ -52,7 +52,7 @@ jobs:
         run: dotnet pack Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --output build/
       - name: Create NuGet package (managed)
         if: matrix.os == 'windows-latest'
-        run: dotnet pack Cloudflare.QuicheNet --output build/
+        run: dotnet pack Cloudflare.QuicheNet -p:IsNuGetBuild=true --output build/
       - name: NuGet login (OIDC → temp API key)
         uses: NuGet/login@v1
         id: login
