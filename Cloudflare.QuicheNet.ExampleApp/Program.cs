@@ -25,15 +25,17 @@ async Task RunListenerAsync(CancellationToken cancellationToken)
 
     // Listener init
     using QuicheListener listener = new QuicheListener(socket, config);
-    
+
     // Listener logic
     using CancellationTokenSource cts = new();
     Task listenTask = listener.ListenAsync(cts.Token);
 
     // Server logic
+    Console.WriteLine("Server: wait for client connection");
     using (QuicheConnection client = await listener.AcceptAsync(cancellationToken))
     {
-        await RunServerAsync(client, cancellationToken); 
+        Console.WriteLine("Server: connected to client");
+        await Task.Run(() => RunServerAsync(client, cancellationToken));
         cts.Cancel(); // Stop listening
     }
 
@@ -44,17 +46,21 @@ async Task RunListenerAsync(CancellationToken cancellationToken)
 async Task RunServerAsync(QuicheConnection client, CancellationToken cancellationToken)
 {
     // Open outbound download stream
-    using (QuicheStream stream = await client.CreateOutboundStreamAsync(QuicheStream.Direction.Unidirectional, cancellationToken))
+    Console.WriteLine("Server: initiating download stream");
+    using (QuicheStream stream = await client.CreateOutboundStreamAsync(QuicheStream.Direction.Unidirectional, cancellationToken)) 
     using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
     {
-        await writer.WriteLineAsync("Hello world!");
+        Console.WriteLine("Server: writing stream content");
+        await writer.WriteAsync("Hello, Client!");
     }
 
-    // Wait for connection to close gracefully
-    while (!cancellationToken.IsCancellationRequested && !client.IsClosed)
+    Console.WriteLine("Server: waiting for response stream");
+    using (QuicheStream stream = await client.AcceptInboundStreamAsync(cancellationToken))
+    using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
     {
-        cancellationToken.ThrowIfCancellationRequested();
-        await Task.Delay(75);
+        Console.WriteLine("Server: reading response content");
+        string content = await reader.ReadToEndAsync(cancellationToken);
+        Console.WriteLine($"Server: client says \"{content}\"");
     }
 }
 
@@ -77,15 +83,33 @@ async Task RunClientAsync(CancellationToken cancellationToken)
     config.SetApplicationProtocols("test");
 
     // Open client connection
-    using (QuicheConnection client = await QuicheConnection.ConnectAsync(
-        socket, new IPEndPoint(IPAddress.Loopback, 8080), config, 
-        "localhost", cancellationToken: cancellationToken)) 
+    Console.WriteLine("Client: connecting to server");
+    using QuicheConnection client = await QuicheConnection.ConnectAsync(
+        socket, new IPEndPoint(IPAddress.Loopback, 8080), config,
+        "localhost", cancellationToken: cancellationToken);
+
+    Console.WriteLine("Client: waiting for download stream");
     using (QuicheStream stream = await client.AcceptInboundStreamAsync(cancellationToken))
     using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
     {
         // Download stream content
-        string output = await reader.ReadToEndAsync(cancellationToken);
-        Console.Write(output);
+        Console.WriteLine("Client: reading requested content");
+        string content = await reader.ReadToEndAsync(cancellationToken);
+        Console.WriteLine($"Client: server says \"{content}\"");
+    }
+
+    using (QuicheStream stream = await client.CreateOutboundStreamAsync(QuicheStream.Direction.Unidirectional, cancellationToken))
+    using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+    {
+        Console.WriteLine("Client: writing response content");
+        await writer.WriteAsync("Hello, Server!");
+    }
+
+    // Wait for connection to close gracefully
+    while (!cancellationToken.IsCancellationRequested && !client.IsClosed)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        await Task.Delay(75);
     }
 }
 
