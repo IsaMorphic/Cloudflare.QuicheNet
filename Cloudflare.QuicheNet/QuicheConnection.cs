@@ -1,3 +1,4 @@
+using Cloudflare.Quiche;
 using System.Buffers;
 using System.Collections.Concurrent;
 using System.Net;
@@ -7,8 +8,8 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
-using Cloudflare.Quiche;
 using static Cloudflare.Quiche.NativeMethods;
+using static Cloudflare.QuicheNet.QuicheStream;
 
 namespace Cloudflare.QuicheNet;
 
@@ -277,28 +278,19 @@ public class QuicheConnection : IDisposable
                 throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
             }
 
+            ulong streamId;
+            QuicheStream? stream;
+            ulong? streamIdOrNull = sendQueue
+                .OrderByDescending(x => x.Value.Length)
+                .Select(x => x.Key)
+                .Cast<ulong?>()
+                .FirstOrDefault();
+            streamId = streamIdOrNull ?? 0UL;
+            stream = streamIdOrNull.HasValue ?
+                GetStream(streamId) : null;
+
             try
             {
-                ulong streamId;
-                QuicheStream? stream;
-                if (sendQueue.Any())
-                {
-                    streamId = sendQueue.Keys.First();
-                    stream = GetStream(streamId);
-                }
-                else
-                {
-                    ulong? streamIdOrNull =
-                        streamMap.Keys.Cast<ulong?>()
-                        .FirstOrDefault(x => x.HasValue ?
-                            IsStreamFinished(x.Value) : false
-                            );
-
-                    streamId = streamIdOrNull.GetValueOrDefault();
-                    stream = streamIdOrNull is null ?
-                        null : GetStream(streamId);
-                }
-
                 bool isConnectionEstablished, isInEarlyData;
                 unsafe
                 {
@@ -341,7 +333,8 @@ public class QuicheConnection : IDisposable
                                 errorCode = (long)QuicheError.QUICHE_ERR_NONE;
                                 resultOrError = (long)NativePtr->StreamSend(streamId,
                                     bufPtr + bytesSent, (nuint)(streamBuf.Length - bytesSent),
-                                    false, (ulong*)Unsafe.AsPointer(ref errorCode)
+                                    bytesSent == streamBuf.Length && stream.IsShuttingDown, 
+                                    (ulong*)Unsafe.AsPointer(ref errorCode)
                                     );
                             }
                         }
@@ -352,12 +345,10 @@ public class QuicheConnection : IDisposable
 
                 sendQueue.AddOrUpdate(streamId,
                     key => streamBuf[(int)bytesSent..],
-                    (key, buf) => [.. streamBuf[(int)bytesSent..], .. buf]
+                    (key, buf) => [.. buf, .. streamBuf[(int)bytesSent..]]
                     );
 
                 QuicheException.ThrowIfError((QuicheError)resultOrError);
-
-                stream.SetFirstWrite();
             }
             catch (QuicheException ex)
             when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
@@ -481,34 +472,34 @@ public class QuicheConnection : IDisposable
                 throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
             }
 
+            long streamIdOrNone;
+            bool isConnEstablished, isInEarlyData;
+            unsafe
+            {
+                lock (this)
+                {
+                    streamIdOrNone = NativePtr->StreamReadableNext();
+
+                    isConnEstablished = NativePtr->IsEstablished();
+                    isInEarlyData = NativePtr->IsInEarlyData();
+                }
+            }
+
+            ulong streamId;
+            QuicheStream stream;
+            if (streamIdOrNone >= 0 && (isConnEstablished || isInEarlyData))
+            {
+                streamId = (ulong)streamIdOrNone;
+                stream = GetStream(streamId);
+            }
+            else
+            {
+                await Task.Delay(75, cancellationToken);
+                continue;
+            }
+
             try
             {
-                long streamIdOrNone;
-                bool isConnEstablished, isInEarlyData;
-                unsafe
-                {
-                    lock (this)
-                    {
-                        streamIdOrNone = NativePtr->StreamReadableNext();
-
-                        isConnEstablished = NativePtr->IsEstablished();
-                        isInEarlyData = NativePtr->IsInEarlyData();
-                    }
-                }
-
-                ulong streamId;
-                QuicheStream stream;
-                if (streamIdOrNone >= 0 && (isConnEstablished || isInEarlyData))
-                {
-                    streamId = (ulong)streamIdOrNone;
-                    stream = GetStream(streamId);
-                }
-                else
-                {
-                    await Task.Delay(75, cancellationToken);
-                    continue;
-                }
-
                 bool streamFinished = false;
                 long recvCount = long.MaxValue;
                 while (!streamFinished && recvCount > 0)
@@ -533,8 +524,6 @@ public class QuicheConnection : IDisposable
                             streamBuf.AsMemory(0, (int)recvCount),
                             streamFinished, cancellationToken
                             );
-
-                        stream.SetFirstRead();
                     }
                     else
                     {
@@ -569,7 +558,10 @@ public class QuicheConnection : IDisposable
         streamMap.GetOrAdd(streamId, id =>
         {
             QuicheStream stream = new(this, id);
-            SpinWait.SpinUntil(() => streamChannel.Writer.TryWrite(stream));
+            if ((id & 1) == 0 ^ !IsServer)
+            {
+                SpinWait.SpinUntil(() => streamChannel.Writer.TryWrite(stream));
+            }
             return stream;
         });
 
@@ -584,7 +576,7 @@ public class QuicheConnection : IDisposable
         }
     }
 
-    public async Task<QuicheStream> CreateOutboundStreamAsync(QuicheStream.Direction direction, CancellationToken cancellationToken = default)
+    public async Task<QuicheStream> CreateOutboundStreamAsync(Direction direction, CancellationToken cancellationToken = default)
     {
         ulong streamId, streamIdx = 0;
         do
