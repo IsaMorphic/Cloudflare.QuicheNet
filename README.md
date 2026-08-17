@@ -64,6 +64,12 @@ QuicheStream stream = await client.AcceptInboundStreamAsync();
 QuicheStream stream = await client.CreateOutboundStreamAsync(/* specify unidirectional or bidirectional */);
 ```
 
+## Cleaning up after Quiche
+
+Since Quiche is a native library, it manages its own memory that must be cleaned up after explicitly. Quiche.NET facilitates this via the built-in .NET `IDisposable` interface which exists for this purpose. All objects that are initialized by Quiche.NET inherit from this interface and must be cleaned up to avoid memory leakage in your app. 
+
+There is also a hierarchy of objects that must be disposed in a certain order to ensure that resources are not leaked. When creating a new `QuicheConnection`, disposing of it will always shutdown all constituent `QuicheStream`s immediately and call their `Dispose` method. Additionally, disposing of a `QuicheListener` object will shutdown all of its constituent `QuicheConnection`s, disconnecting all clients immediately. Finally, a given `QuicheConfig` should always be disposed of, but not before instantiating a `QuicheListener` or `QuicheConnection`.
+
 ## Working example (`ExampleApp`)
 
 To compile and debug a working example application with minimal logic, see the `ExampleApp` project. This program starts a client and server within the same process on separate sockets to demonstrate a basic "Hello world" scenario. Full TLS authentication is also properly demonstrated. To run the example application, you must generate a self-signed SSL certificate. Use the following command to do so in the `trust` subdirectory:
