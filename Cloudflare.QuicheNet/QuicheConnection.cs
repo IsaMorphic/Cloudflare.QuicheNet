@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Channels;
+
 using static Cloudflare.Quiche.NativeMethods;
 using static Cloudflare.QuicheNet.QuicheStream;
 
@@ -558,7 +559,7 @@ public class QuicheConnection : IDisposable
         streamMap.GetOrAdd(streamId, id =>
         {
             QuicheStream stream = new(this, id);
-            if ((id & 1) == 0 ^ !IsServer)
+            if ((id & 1) != 0 ^ IsServer)
             {
                 SpinWait.SpinUntil(() => streamChannel.Writer.TryWrite(stream));
             }
@@ -585,7 +586,7 @@ public class QuicheConnection : IDisposable
             streamId = (streamIdx++ << 2) | (ulong)direction | Convert.ToUInt64(IsServer);
             if (streamMap.ContainsKey(streamId))
             {
-                await Task.Yield();
+                await Task.Delay(75);
             }
             else
             {
@@ -639,9 +640,9 @@ public class QuicheConnection : IDisposable
                         Task.WaitAll(recvTask, sendTask, recvStreamTask, sendStreamTask);
                     }
                     catch (AggregateException ex)
-                    when (ex.InnerExceptions.All(
-                        x => x is OperationCanceledException ||
-                        x is QuicheException { ErrorCode: QuicheError.QUICHE_ERR_DONE }
+                    when (ex.InnerExceptions.All(x => x is 
+                        QuicheException { ErrorCode: QuicheError.QUICHE_ERR_DONE } or
+                        OperationCanceledException
                         ))
                     { }
                     catch (QuicheException ex)
