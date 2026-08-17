@@ -1,8 +1,5 @@
-﻿
-using System.Buffers;
+﻿using System.Buffers;
 using System.IO.Pipelines;
-
-using Cloudflare.Quiche;
 
 namespace Cloudflare.QuicheNet
 {
