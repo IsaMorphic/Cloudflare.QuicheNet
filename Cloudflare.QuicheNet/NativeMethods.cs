@@ -83,7 +83,8 @@ namespace Cloudflare.Quiche
                 libraryPath = Path.Combine(LibraryDirPath, libName);
             }
 
-            if (NativeLibrary.TryLoad(libraryPath, out IntPtr handle))
+            string fullPath = Path.Combine(AppContext.BaseDirectory, libraryPath);
+            if (NativeLibrary.TryLoad(fullPath, out IntPtr handle))
             {
                 return handle;
             }
