@@ -254,7 +254,7 @@ public class QuicheConfig : IDisposable
                 NativePtr->VerifyPeer(value);
             }
         }
-    }    
+    }
 
     public QuicheConfig(
         bool isEarlyDataEnabled = false,
@@ -365,7 +365,7 @@ public class QuicheConfig : IDisposable
         }
     }
 
-    public void EnableDatagram(bool enabled, int sendQueueLength, int receiveQueueLength) 
+    public void EnableDatagram(bool enabled, int sendQueueLength, int receiveQueueLength)
     {
         unsafe
         {
