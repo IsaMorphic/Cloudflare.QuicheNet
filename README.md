@@ -78,7 +78,42 @@ To compile and debug a working example application with minimal logic, see the `
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout key.pem -out cert.pem -addext "subjectAltName = DNS:localhost, IP:127.0.0.1"
 ```
 
-Once the certificate is generated, the example application can be run for testing.
+Once the certificate is generated, the example application can be run for testing (e.g. `dotnet run`, IDE / debugger)
+
+## Extras & Goodies
+
+Quiche also supports sending / receiving `DATAGRAM` frames from any `Connection` instance. This feature of the QUIC protocol can be used to leverage the existing semantics of a UDP session and asynchronously send smaller messages to the other side which are unordered, but encrypted and reliable. This feature is supported by Quiche.NET and can be used with any `QuicheConnection` instance as follows:
+
+```csharp
+// Before connection init
+QuicheConfig config = new QuicheConfig { /* ... */ };
+config.SetDatagramOptions(new QuicheConfig.DatagramOptions 
+{
+    Enabled = true,
+	SendQueueLength = 64,
+    ReceiveQueueLength = 64,
+});
+
+// Once connected
+QuicheConnection conn;
+
+// Observe datagrams once enough data is available
+if (conn.DatagramReceiveQueueSize > READ_THRESHOLD_BYTES)
+{
+    // Call will wait asynchronously for next DATAGRAM if none are available in the queue
+    byte[] data = await conn.ReceiveDatagramAsync(); 
+}
+
+// Send datagrams until queue is saturated
+if (conn.DatagramSendQueueSize < WRITE_THRESHOLD_BYTES)
+{
+    // Call will wait asynchronously until queue is no longer full
+    byte[] data = /* ... */;
+    await conn.SendDatagramAsync(data);
+}
+```
+
+All queued DATAGRAMs are guaranteed to be delivered, and will be flushed reliably by Quiche before a connection closes. This feature is best suited to delivering smaller messages alongside long-running streams. These messages can be used, for example, to exchange SIP messages between two parties in a voice / video call, all within the same connection and without dealing with rate control limitations that streams have to deal with. 
 
 # How it works
 
