@@ -365,11 +365,15 @@ public class QuicheConfig : IDisposable
         }
     }
 
-    public void SetDatagramOptions(bool enabled, int sendQueueLength, int receiveQueueLength)
+    public record DatagramOptions(bool Enabled, int SendQueueLength, int ReceiveQueueLength);
+
+    public void SetDatagramOptions(DatagramOptions options)
     {
         unsafe
         {
-            NativePtr->EnableDgram(enabled, (size_t)sendQueueLength, (size_t)receiveQueueLength);
+            NativePtr->EnableDgram(options.Enabled, 
+                (size_t)options.SendQueueLength, 
+                (size_t)options.ReceiveQueueLength);
         }
     }
 
