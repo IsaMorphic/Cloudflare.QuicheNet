@@ -365,7 +365,7 @@ public class QuicheConfig : IDisposable
         }
     }
 
-    public void EnableDatagram(bool enabled, int sendQueueLength, int receiveQueueLength)
+    public void SetDatagramOptions(bool enabled, int sendQueueLength, int receiveQueueLength)
     {
         unsafe
         {
