@@ -254,7 +254,7 @@ public class QuicheConfig : IDisposable
                 NativePtr->VerifyPeer(value);
             }
         }
-    }
+    }    
 
     public QuicheConfig(
         bool isEarlyDataEnabled = false,
@@ -362,6 +362,14 @@ public class QuicheConfig : IDisposable
                     SetTicketKey(keyBytesPtr, (nuint)keyBytes.Length),
                     "Failed to set ticket key contents for this instance.");
             }
+        }
+    }
+
+    public void EnableDatagram(bool enabled, int sendQueueLength, int receiveQueueLength) 
+    {
+        unsafe
+        {
+            NativePtr->EnableDgram(enabled, (size_t)sendQueueLength, (size_t)receiveQueueLength);
         }
     }
 
