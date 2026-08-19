@@ -58,7 +58,7 @@ namespace Cloudflare.Quiche
                     return IntPtr.Zero;
                 }
 
-                libraryPath = Path.Combine("runtimes", rid, "native", libName);
+                libraryPath = Path.Combine(AppContext.BaseDirectory, "runtimes", rid, "native", libName);
             }
             else 
             {
@@ -83,8 +83,7 @@ namespace Cloudflare.Quiche
                 libraryPath = Path.Combine(LibraryDirPath, libName);
             }
 
-            string fullPath = Path.Combine(AppContext.BaseDirectory, libraryPath);
-            if (NativeLibrary.TryLoad(fullPath, out IntPtr handle))
+            if (NativeLibrary.TryLoad(libraryPath, out IntPtr handle))
             {
                 return handle;
             }
