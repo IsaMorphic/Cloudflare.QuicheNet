@@ -90,7 +90,7 @@ QuicheConfig config = new QuicheConfig { /* ... */ };
 config.SetDatagramOptions(new QuicheConfig.DatagramOptions 
 {
     Enabled = true,
-	SendQueueLength = 64,
+    SendQueueLength = 64,
     ReceiveQueueLength = 64,
 });
 
