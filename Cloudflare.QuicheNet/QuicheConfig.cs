@@ -365,6 +365,14 @@ public class QuicheConfig : IDisposable
         }
     }
 
+    public void EnableDatagram(bool enabled, int sendQueueLength, int receiveQueueLength)
+    {
+        unsafe
+        {
+            NativePtr->EnableDgram(enabled, (size_t)sendQueueLength, (size_t)receiveQueueLength);
+        }
+    }
+
     #region IDisposable
 
     private bool disposedValue;

@@ -140,6 +140,34 @@ public class QuicheConnection : IDisposable
         }
     }
 
+    public long DatagramSendQueueSize
+    {
+        get
+        {
+            unsafe
+            {
+                lock (this)
+                {
+                    return NativePtr is null ? 0 : (long)NativePtr->DgramSendQueueByteSize();
+                }
+            }
+        }
+    }
+
+    public long DatagramReceiveQueueSize
+    {
+        get
+        {
+            unsafe
+            {
+                lock (this)
+                {
+                    return NativePtr is null ? 0 : (long)NativePtr->DgramRecvQueueByteSize();
+                }
+            }
+        }
+    }
+
     private unsafe QuicheConnection(quiche_conn* nativePtr, Socket socket, EndPoint remoteEndPoint, ReadOnlyMemory<byte> initialData, ReadOnlyMemory<byte> connectionId)
     {
         NativePtr = nativePtr;
@@ -334,7 +362,7 @@ public class QuicheConnection : IDisposable
                                 errorCode = (long)QuicheError.QUICHE_ERR_NONE;
                                 resultOrError = (long)NativePtr->StreamSend(streamId,
                                     bufPtr + bytesSent, (nuint)(streamBuf.Length - bytesSent),
-                                    bytesSent == streamBuf.Length && stream.IsShuttingDown, 
+                                    bytesSent == streamBuf.Length && stream.IsShuttingDown,
                                     (ulong*)Unsafe.AsPointer(ref errorCode)
                                     );
                             }
@@ -566,6 +594,72 @@ public class QuicheConnection : IDisposable
             return stream;
         });
 
+    private bool IsDatagramSendQueueFull()
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                return NativePtr is not null && NativePtr->IsDgramSendQueueFull();
+            }
+        }
+    }
+
+    private void SendDatagram(byte[] dgramBuf)
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                fixed (byte* bufPtr = dgramBuf)
+                {
+                    QuicheError errorCode = (QuicheError)NativePtr->DgramSend(bufPtr, (size_t)dgramBuf.Length);
+                    QuicheException.ThrowIfError(errorCode);
+                }
+            }
+        }
+    }
+
+    private bool IsDatagramReceiveQueueEmpty()
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                if (NativePtr is null)
+                {
+                    return true;
+                }
+                else
+                {
+                    long resultOrError = (long)NativePtr->DgramRecvQueueLen();
+                    QuicheException.ThrowIfError((QuicheError)resultOrError);
+                    return resultOrError == 0;
+                }
+            }
+        }
+    }
+
+    private byte[] ReceiveDatagram()
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                long dgramBufLen = (long)NativePtr->DgramRecvFrontLen();
+                byte[] dgramBuf = new byte[dgramBufLen];
+
+                fixed (byte* bufPtr = dgramBuf)
+                {
+                    QuicheError errorCode = (QuicheError)NativePtr->DgramRecv(bufPtr, (size_t)dgramBuf.Length);
+                    QuicheException.ThrowIfError(errorCode);
+                }
+
+                return dgramBuf;
+            }
+        }
+    }
+
     internal bool IsStreamFinished(ulong streamId)
     {
         unsafe
@@ -599,6 +693,59 @@ public class QuicheConnection : IDisposable
     public async Task<QuicheStream> AcceptInboundStreamAsync(CancellationToken cancellationToken = default)
     {
         return await streamChannel.Reader.ReadAsync(cancellationToken);
+    }
+
+    public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken)
+    {
+        long maxLength = GetMaxDatagramSize();
+        if (maxLength > 0 && dgramBuf.Length > maxLength)
+        {
+            throw new ArgumentException($"Provided datagram buffer is too large. Use {nameof(GetMaxDatagramSize)} to get the maximum datagram size for this instance.", nameof(dgramBuf));
+        }
+
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsDatagramSendQueueFull())
+            {
+                await Task.Delay(75);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        SendDatagram(dgramBuf);
+    }
+
+    public async Task<byte[]> ReceiveDatagramAsync(CancellationToken cancellationToken)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsDatagramReceiveQueueEmpty())
+            {
+                await Task.Delay(75);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        return ReceiveDatagram();
+    }
+
+    public long GetMaxDatagramSize()
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                return NativePtr is null ? 0 : (long)NativePtr->DgramMaxWritableLen();
+            }
+        }
     }
 
     private bool disposedValue;
@@ -640,7 +787,7 @@ public class QuicheConnection : IDisposable
                         Task.WaitAll(recvTask, sendTask, recvStreamTask, sendStreamTask);
                     }
                     catch (AggregateException ex)
-                    when (ex.InnerExceptions.All(x => x is 
+                    when (ex.InnerExceptions.All(x => x is
                         QuicheException { ErrorCode: QuicheError.QUICHE_ERR_DONE } or
                         OperationCanceledException
                         ))
