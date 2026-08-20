@@ -102,6 +102,9 @@ if (conn.DatagramReceiveQueueSize > READ_THRESHOLD_BYTES)
 {
     // Call will wait asynchronously for next DATAGRAM if none are available in the queue
     byte[] data = await conn.ReceiveDatagramAsync(); 
+    
+    // Call will return false if no DATAGRAMs are available yet
+    bool result = conn.TryReceiveDatagram(out byte[]? data);
 }
 
 // Send datagrams until queue is saturated
@@ -110,6 +113,9 @@ if (conn.DatagramSendQueueSize < WRITE_THRESHOLD_BYTES)
     // Call will wait asynchronously until queue is no longer full
     byte[] data = /* ... */;
     await conn.SendDatagramAsync(data);
+    
+    // Call will return false if send queue is full
+    bool result = conn.TrySendDatagram(data);
 }
 ```
 
