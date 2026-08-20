@@ -112,6 +112,34 @@ public class QuicheConnection : IDisposable
 
     internal Task ConnectionEstablished => establishedTcs.Task;
 
+    public long DatagramReceiveQueueSize
+    {
+        get
+        {
+            unsafe
+            {
+                lock (this)
+                {
+                    return NativePtr is null ? 0 : (long)NativePtr->DgramRecvQueueByteSize();
+                }
+            }
+        }
+    }
+
+    public long DatagramSendQueueSize
+    {
+        get
+        {
+            unsafe
+            {
+                lock (this)
+                {
+                    return NativePtr is null ? 0 : (long)NativePtr->DgramSendQueueByteSize();
+                }
+            }
+        }
+    }
+
     public bool IsClosed
     {
         get
@@ -140,7 +168,7 @@ public class QuicheConnection : IDisposable
         }
     }
 
-    public long DatagramSendQueueSize
+    public long MaxDatagramSize
     {
         get
         {
@@ -148,21 +176,7 @@ public class QuicheConnection : IDisposable
             {
                 lock (this)
                 {
-                    return NativePtr is null ? 0 : (long)NativePtr->DgramSendQueueByteSize();
-                }
-            }
-        }
-    }
-
-    public long DatagramReceiveQueueSize
-    {
-        get
-        {
-            unsafe
-            {
-                lock (this)
-                {
-                    return NativePtr is null ? 0 : (long)NativePtr->DgramRecvQueueByteSize();
+                    return NativePtr is null ? 0 : (long)NativePtr->DgramMaxWritableLen();
                 }
             }
         }
@@ -697,10 +711,9 @@ public class QuicheConnection : IDisposable
 
     public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken)
     {
-        long maxLength = GetMaxDatagramSize();
-        if (maxLength > 0 && dgramBuf.Length > maxLength)
+        if (MaxDatagramSize > 0 && dgramBuf.Length > MaxDatagramSize)
         {
-            throw new ArgumentException($"Provided datagram buffer is too large. Use {nameof(GetMaxDatagramSize)} to get the maximum datagram size for this instance.", nameof(dgramBuf));
+            throw new ArgumentException($"Provided datagram buffer is too large. Use {nameof(MaxDatagramSize)} to get the maximum datagram size for this instance.", nameof(dgramBuf));
         }
 
         while (!cancellationToken.IsCancellationRequested)
@@ -735,17 +748,6 @@ public class QuicheConnection : IDisposable
         }
 
         return ReceiveDatagram();
-    }
-
-    public long GetMaxDatagramSize()
-    {
-        unsafe
-        {
-            lock (this)
-            {
-                return NativePtr is null ? 0 : (long)NativePtr->DgramMaxWritableLen();
-            }
-        }
     }
 
     private bool disposedValue;
