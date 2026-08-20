@@ -608,32 +608,6 @@ public class QuicheConnection : IDisposable
             return stream;
         });
 
-    private bool IsDatagramSendQueueFull()
-    {
-        unsafe
-        {
-            lock (this)
-            {
-                return NativePtr is not null && NativePtr->IsDgramSendQueueFull();
-            }
-        }
-    }
-
-    private void SendDatagram(byte[] dgramBuf)
-    {
-        unsafe
-        {
-            lock (this)
-            {
-                fixed (byte* bufPtr = dgramBuf)
-                {
-                    QuicheError errorCode = (QuicheError)NativePtr->DgramSend(bufPtr, (size_t)dgramBuf.Length);
-                    QuicheException.ThrowIfError(errorCode);
-                }
-            }
-        }
-    }
-
     private bool IsDatagramReceiveQueueEmpty()
     {
         unsafe
@@ -674,6 +648,32 @@ public class QuicheConnection : IDisposable
         }
     }
 
+    private bool IsDatagramSendQueueFull()
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                return NativePtr is not null && NativePtr->IsDgramSendQueueFull();
+            }
+        }
+    }
+
+    private void SendDatagram(byte[] dgramBuf)
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                fixed (byte* bufPtr = dgramBuf)
+                {
+                    QuicheError errorCode = (QuicheError)NativePtr->DgramSend(bufPtr, (size_t)dgramBuf.Length);
+                    QuicheException.ThrowIfError(errorCode);
+                }
+            }
+        }
+    }
+
     internal bool IsStreamFinished(ulong streamId)
     {
         unsafe
@@ -709,7 +709,26 @@ public class QuicheConnection : IDisposable
         return await streamChannel.Reader.ReadAsync(cancellationToken);
     }
 
-    public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken)
+    public async Task<byte[]> ReceiveDatagramAsync(CancellationToken cancellationToken = default)
+    {
+        while (!cancellationToken.IsCancellationRequested)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (IsDatagramReceiveQueueEmpty())
+            {
+                await Task.Delay(75);
+            }
+            else
+            {
+                break;
+            }
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        return ReceiveDatagram();
+    }
+
+    public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken = default)
     {
         if (MaxDatagramSize > 0 && dgramBuf.Length > MaxDatagramSize)
         {
@@ -731,25 +750,6 @@ public class QuicheConnection : IDisposable
 
         cancellationToken.ThrowIfCancellationRequested();
         SendDatagram(dgramBuf);
-    }
-
-    public async Task<byte[]> ReceiveDatagramAsync(CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (IsDatagramReceiveQueueEmpty())
-            {
-                await Task.Delay(75);
-            }
-            else
-            {
-                break;
-            }
-        }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return ReceiveDatagram();
     }
 
     private bool disposedValue;
