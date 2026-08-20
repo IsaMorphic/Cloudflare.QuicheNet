@@ -716,6 +716,7 @@ public class QuicheConnection : IDisposable
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         SendDatagram(dgramBuf);
     }
 
@@ -734,6 +735,7 @@ public class QuicheConnection : IDisposable
             }
         }
 
+        cancellationToken.ThrowIfCancellationRequested();
         return ReceiveDatagram();
     }
 
