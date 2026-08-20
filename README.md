@@ -113,7 +113,7 @@ if (conn.DatagramSendQueueSize < WRITE_THRESHOLD_BYTES)
 }
 ```
 
-All queued DATAGRAMs are guaranteed to be delivered, and will be flushed reliably by Quiche before a connection closes. This feature is best suited to delivering smaller messages alongside long-running streams. These messages can be used, for example, to exchange SIP messages between two parties in a voice / video call, all within the same connection and without dealing with rate control limitations that streams have to deal with. 
+All queued `DATAGRAM`s are guaranteed to be delivered, but will not be drained reliably by Quiche before a connection closes; users handle this behavior themselves. This feature is best suited to delivering smaller messages alongside long-running streams. These messages can be used, for example, to exchange SIP messages between two parties in a voice / video call, all within the same connection and without dealing with rate control limitations that streams have to deal with. 
 
 # How it works
 
