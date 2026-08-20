@@ -1,6 +1,7 @@
 using Cloudflare.Quiche;
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.CompilerServices;
@@ -709,47 +710,56 @@ public class QuicheConnection : IDisposable
         return await streamChannel.Reader.ReadAsync(cancellationToken);
     }
 
-    public async Task<byte[]> ReceiveDatagramAsync(CancellationToken cancellationToken = default)
+    public bool TryReceiveDatagram([NotNullWhen(true)] out byte[]? dgramBuf)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        if (IsDatagramReceiveQueueEmpty())
         {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (IsDatagramReceiveQueueEmpty())
-            {
-                await Task.Delay(75);
-            }
-            else
-            {
-                break;
-            }
+            dgramBuf = null;
+            return false;
         }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        return ReceiveDatagram();
+        else
+        {
+            dgramBuf = ReceiveDatagram();
+            return true;
+        }
     }
 
-    public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken = default)
+    public async Task<byte[]> ReceiveDatagramAsync(CancellationToken cancellationToken = default)
+    {
+        byte[]? dgramBuf;
+        while (!TryReceiveDatagram(out dgramBuf))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Delay(75);
+        }
+
+        return dgramBuf;
+    }
+
+    public bool TrySendDatagram(byte[] dgramBuf)
     {
         if (MaxDatagramSize > 0 && dgramBuf.Length > MaxDatagramSize)
         {
             throw new ArgumentException($"Provided datagram buffer is too large. Use {nameof(MaxDatagramSize)} to get the maximum datagram size for this instance.", nameof(dgramBuf));
         }
+        else if (IsDatagramSendQueueFull())
+        {
+            return false;
+        }
+        else
+        {
+            SendDatagram(dgramBuf);
+            return true;
+        }
+    }
 
-        while (!cancellationToken.IsCancellationRequested)
+    public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken = default)
+    {
+        while (!TrySendDatagram(dgramBuf))
         {
             cancellationToken.ThrowIfCancellationRequested();
-            if (IsDatagramSendQueueFull())
-            {
-                await Task.Delay(75);
-            }
-            else
-            {
-                break;
-            }
+            await Task.Delay(75);
         }
-
-        cancellationToken.ThrowIfCancellationRequested();
-        SendDatagram(dgramBuf);
     }
 
     private bool disposedValue;
