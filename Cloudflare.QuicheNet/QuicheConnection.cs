@@ -306,7 +306,7 @@ public class QuicheConnection : IDisposable
             }
             catch (OperationCanceledException)
             {
-                establishedTcs.TrySetCanceled(cts.Token);
+                establishedTcs.TrySetCanceled(cancellationToken);
                 throw;
             }
         }
@@ -408,7 +408,7 @@ public class QuicheConnection : IDisposable
             }
             catch (OperationCanceledException)
             {
-                establishedTcs.TrySetCanceled(cts.Token);
+                establishedTcs.TrySetCanceled(cancellationToken);
                 throw;
             }
         }
@@ -499,7 +499,7 @@ public class QuicheConnection : IDisposable
             }
             catch (OperationCanceledException)
             {
-                establishedTcs.TrySetCanceled(cts.Token);
+                establishedTcs.TrySetCanceled(cancellationToken);
                 throw;
             }
         }
@@ -581,6 +581,16 @@ public class QuicheConnection : IDisposable
                 if (IsClosed) { throw; }
                 await Task.Delay(75, cancellationToken);
                 continue;
+            }
+            catch (QuicheException ex)
+            {
+                establishedTcs.TrySetException(ex);
+                throw;
+            }
+            catch (OperationCanceledException)
+            {
+                establishedTcs.TrySetCanceled(cancellationToken);
+                throw;
             }
         }
     }
@@ -768,15 +778,14 @@ public class QuicheConnection : IDisposable
     {
         unsafe
         {
-            bool isNativeHandleValid;
-            lock (this)
+            if (!disposedValue)
             {
-                isNativeHandleValid = NativePtr is not null;
-            }
-
-            if (!disposedValue && isNativeHandleValid)
-            {
-                disposedValue = true;
+                bool isNativeHandleValid;
+                lock (this)
+                {
+                    isNativeHandleValid = NativePtr is not null;
+                    disposedValue = true;
+                }
 
                 if (disposing)
                 {
@@ -811,11 +820,8 @@ public class QuicheConnection : IDisposable
                     { }
                     finally
                     {
-                        if (!cts.IsCancellationRequested)
-                        {
-                            cts.Cancel();
-                            cts.Dispose();
-                        }
+                        cts.Cancel();
+                        cts.Dispose();
 
                         recvQueue.Clear();
                         sendQueue.Clear();
