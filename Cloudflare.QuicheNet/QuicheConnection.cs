@@ -776,67 +776,71 @@ public class QuicheConnection : IDisposable
 
     protected virtual void Dispose(bool disposing)
     {
+        lock (this)
+        {
+            if (disposedValue)
+            {
+                return;
+            }
+            else
+            {
+                disposedValue = true;
+            }
+        }
+
+        if (disposing)
+        {
+            foreach (var (_, stream) in streamMap)
+            {
+                stream.Dispose();
+            }
+
+            try
+            {
+                unsafe
+                {
+                    lock (this)
+                    {
+                        byte[] reasonBuf = Encoding.UTF8.GetBytes("Connection was implicitly closed for user initiated disposal.");
+                        fixed (byte* reasonPtr = reasonBuf)
+                        {
+                            int errorResult = NativePtr->Close(true, 0x00, reasonPtr, (size_t)reasonBuf.Length);
+                            QuicheException.ThrowIfError((QuicheError)errorResult, "Failed to close connection!");
+                        }
+                    }
+                }
+
+                Task.WaitAll(recvTask, sendTask, recvStreamTask, sendStreamTask);
+            }
+            catch (AggregateException ex)
+            when (ex.InnerExceptions.All(x => x is
+                QuicheException { ErrorCode: QuicheError.QUICHE_ERR_DONE } or
+                OperationCanceledException
+                ))
+            { }
+            catch (QuicheException ex)
+            when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
+            { }
+            finally
+            {
+                cts.Cancel();
+                cts.Dispose();
+
+                recvQueue.Clear();
+                sendQueue.Clear();
+
+                streamMap.Clear();
+            }
+        }
+
         unsafe
         {
-            if (!disposedValue)
+            lock (this)
             {
-                bool isNativeHandleValid;
-                lock (this)
+                if (NativePtr is not null)
                 {
-                    isNativeHandleValid = NativePtr is not null;
-                    disposedValue = true;
-                }
-
-                if (disposing)
-                {
-                    foreach (var (_, stream) in streamMap)
-                    {
-                        stream.Dispose();
-                    }
-
-                    try
-                    {
-                        lock (this)
-                        {
-                            int errorResult;
-                            byte[] reasonBuf = Encoding.UTF8.GetBytes("Connection was implicitly closed for user initiated disposal.");
-                            fixed (byte* reasonPtr = reasonBuf)
-                            {
-                                errorResult = NativePtr->Close(true, 0x00, reasonPtr, (nuint)reasonBuf.Length);
-                                QuicheException.ThrowIfError((QuicheError)errorResult, "Failed to close connection!");
-                            }
-                        }
-
-                        Task.WaitAll(recvTask, sendTask, recvStreamTask, sendStreamTask);
-                    }
-                    catch (AggregateException ex)
-                    when (ex.InnerExceptions.All(x => x is
-                        QuicheException { ErrorCode: QuicheError.QUICHE_ERR_DONE } or
-                        OperationCanceledException
-                        ))
-                    { }
-                    catch (QuicheException ex)
-                    when (ex.ErrorCode == QuicheError.QUICHE_ERR_DONE)
-                    { }
-                    finally
-                    {
-                        cts.Cancel();
-                        cts.Dispose();
-
-                        recvQueue.Clear();
-                        sendQueue.Clear();
-
-                        streamMap.Clear();
-                    }
-                }
-
-                lock (this)
-                {
-                    if (NativePtr is not null)
-                    {
-                        NativePtr->Free();
-                        NativePtr = null;
-                    }
+                    NativePtr->Free();
+                    NativePtr = null;
                 }
             }
         }
