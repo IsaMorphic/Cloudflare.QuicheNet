@@ -22,6 +22,12 @@ async Task RunListenerAsync(CancellationToken cancellationToken)
     config.SetApplicationProtocols("test");
     config.LoadPrivateKeyFromPemFile("trust/key.pem");
     config.LoadCertificateChainFromPemFile("trust/cert.pem");
+    config.SetDatagramOptions(new QuicheConfig.DatagramOptions
+    {
+        Enabled = true,
+        ReceiveQueueLength = 64,
+        SendQueueLength = 64,
+    });
 
     // Listener init
     using QuicheListener listener = new QuicheListener(socket, config);
@@ -47,7 +53,7 @@ async Task RunServerAsync(QuicheConnection client, CancellationToken cancellatio
 {
     // Open outbound download stream
     Console.WriteLine("Server: initiating download stream");
-    using (QuicheStream stream = await client.CreateOutboundStreamAsync(QuicheStream.Direction.Unidirectional, cancellationToken)) 
+    using (QuicheStream stream = await client.CreateOutboundStreamAsync(QuicheStream.Direction.Unidirectional, cancellationToken))
     using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
     {
         Console.WriteLine("Server: writing stream content");
@@ -61,6 +67,23 @@ async Task RunServerAsync(QuicheConnection client, CancellationToken cancellatio
         Console.WriteLine("Server: reading response content");
         string content = await reader.ReadToEndAsync(cancellationToken);
         Console.WriteLine($"Server: client says \"{content}\"");
+    }
+
+    using (MemoryStream stream = new MemoryStream())
+    {
+        using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+        {
+            await writer.WriteAsync("DATAGRAM from Server!");
+        }
+
+        await client.SendDatagramAsync(stream.ToArray());
+    }
+
+    using (MemoryStream stream = new MemoryStream(await client.ReceiveDatagramAsync(cancellationToken)))
+    using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+    {
+        string output = await reader.ReadToEndAsync(cancellationToken);
+        Console.WriteLine($"Server: got DATAGRAM from client saying \"{output}\"");
     }
 }
 
@@ -81,6 +104,12 @@ async Task RunClientAsync(CancellationToken cancellationToken)
         MaxInitialRemoteBidiStreamDataSize = 4096,
     };
     config.SetApplicationProtocols("test");
+    config.SetDatagramOptions(new QuicheConfig.DatagramOptions
+    {
+        Enabled = true,
+        ReceiveQueueLength = 64,
+        SendQueueLength = 64,
+    });
 
     // Open client connection
     Console.WriteLine("Client: connecting to server");
@@ -103,6 +132,23 @@ async Task RunClientAsync(CancellationToken cancellationToken)
     {
         Console.WriteLine("Client: writing response content");
         await writer.WriteAsync("Hello, Server!");
+    }
+
+    using (MemoryStream stream = new MemoryStream(await client.ReceiveDatagramAsync(cancellationToken)))
+    using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+    {
+        string output = await reader.ReadToEndAsync(cancellationToken);
+        Console.WriteLine($"Client: got DATAGRAM from server saying \"{output}\"");
+    }
+
+    using (MemoryStream stream = new MemoryStream())
+    {
+        using (StreamWriter writer = new StreamWriter(stream, Encoding.UTF8))
+        {
+            await writer.WriteAsync("DATAGRAM from Client!");
+        }
+
+        await client.SendDatagramAsync(stream.ToArray());
     }
 
     // Wait for connection to close gracefully
