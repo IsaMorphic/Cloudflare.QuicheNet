@@ -20,7 +20,10 @@ namespace Cloudflare.QuicheNet
         private readonly Pipe? recvPipe, sendPipe;
 
         private readonly QuicheConnection conn;
+
         private readonly ulong streamId;
+
+        private bool disposedValue;
 
         public override bool CanRead => recvPipe is not null;
 
@@ -36,7 +39,7 @@ namespace Cloudflare.QuicheNet
 
         public override long Length => throw new NotSupportedException("This stream cannot have its length set or changed.");
 
-        internal bool IsShuttingDown { get; private set; }
+        internal bool IsShuttingDown => disposedValue;
 
         internal QuicheStream(QuicheConnection conn, ulong streamId)
         {
@@ -143,21 +146,29 @@ namespace Cloudflare.QuicheNet
         public override void SetLength(long value) =>
             throw new NotSupportedException("This stream cannot have its length set or changed.");
 
-        public override void Close()
+        protected override void Dispose(bool disposing)
         {
-            base.Close();
-
-            if (recvPipe is not null)
+            if (!disposedValue)
             {
-                recvPipe.Writer.Complete();
+                disposedValue = true;
+
+                if (disposing)
+                {
+                    if (recvPipe is not null)
+                    {
+                        recvPipe.Writer.Complete();
+                    }
+
+                    if (sendPipe is not null)
+                    {
+                        sendPipe.Writer.Complete();
+                    }
+
+                    Flush();
+                }
             }
 
-            if (sendPipe is not null)
-            {
-                sendPipe.Writer.Complete();
-            }
-
-            Flush(); IsShuttingDown = true;
+            base.Dispose(disposing);
         }
     }
 }
