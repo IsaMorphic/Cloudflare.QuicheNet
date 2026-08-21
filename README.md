@@ -10,7 +10,7 @@ The wrapper exposes a few key classes that mirror the functionality of .NET's bu
 
 ## Server-side (`QuicheListener`)
 
-```c#
+```csharp
 // Initialize UDP socket (listening on port 8080)
 Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
 socket.Bind(new IPEndPoint(IPAddress.Any, 8080));
@@ -40,7 +40,7 @@ QuicheStream stream = await client.CreateOutboundStreamAsync(/* specify unidirec
 
 ## Client-side (`QuicheConnection`)
 
-```c#
+```csharp
 // Initialize UDP socket (random port)
 Socket socket = new Socket(SocketType.Dgram, ProtocolType.Udp);
 socket.Bind(new IPEndPoint(IPAddress.Any, 0));
@@ -86,13 +86,16 @@ Quiche also supports sending / receiving `DATAGRAM` frames from any `Connection`
 
 ```csharp
 // Before connection init
-QuicheConfig config = new QuicheConfig { /* ... */ };
-config.SetDatagramOptions(new QuicheConfig.DatagramOptions 
-{
+QuicheConfig config = new QuicheConfig 
+{ 
+  /* ... */ 
+  DatagramOptions = new DatagramOptions 
+  {
     Enabled = true,
     SendQueueLength = 64,
     ReceiveQueueLength = 64,
-});
+  };
+};
 
 // Once connected
 QuicheConnection conn;
