@@ -76,7 +76,7 @@ async Task RunServerAsync(QuicheConnection client, CancellationToken cancellatio
             await writer.WriteAsync("DATAGRAM from Server!");
         }
 
-        await client.SendDatagramAsync(stream.ToArray());
+        await client.SendDatagramAsync(stream.ToArray(), cancellationToken);
     }
 
     using (MemoryStream stream = new MemoryStream(await client.ReceiveDatagramAsync(cancellationToken)))
@@ -148,15 +148,10 @@ async Task RunClientAsync(CancellationToken cancellationToken)
             await writer.WriteAsync("DATAGRAM from Client!");
         }
 
-        await client.SendDatagramAsync(stream.ToArray());
+        await client.SendDatagramAsync(stream.ToArray(), cancellationToken);
     }
 
-    // Wait for connection to close gracefully
-    while (!cancellationToken.IsCancellationRequested && !client.IsClosed)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        await Task.Delay(75);
-    }
+    await client.WaitForShutdownAsync(cancellationToken);
 }
 
 using CancellationTokenSource cts = new();
