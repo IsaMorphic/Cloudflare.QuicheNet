@@ -353,7 +353,6 @@ public class QuicheConnection : IDisposable
                 }
             }
         }
-
     }
 
     private async Task SendStreamAsync(CancellationToken cancellationToken)
