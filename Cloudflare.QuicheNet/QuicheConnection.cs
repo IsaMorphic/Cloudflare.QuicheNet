@@ -116,35 +116,7 @@ public class QuicheConnection : IDisposable
 
     internal unsafe quiche_conn* NativePtr { get; private set; }
 
-    internal Task ConnectionEstablished => establishedTcs.Task;
-
-    public long DatagramReceiveQueueSize
-    {
-        get
-        {
-            unsafe
-            {
-                lock (this)
-                {
-                    return NativePtr is null ? 0 : (long)NativePtr->DgramRecvQueueByteSize();
-                }
-            }
-        }
-    }
-
-    public long DatagramSendQueueSize
-    {
-        get
-        {
-            unsafe
-            {
-                lock (this)
-                {
-                    return NativePtr is null ? 0 : (long)NativePtr->DgramSendQueueByteSize();
-                }
-            }
-        }
-    }
+    internal Task ConnectionEstablishedTask => establishedTcs.Task;
 
     public bool IsClosed
     {
@@ -159,7 +131,7 @@ public class QuicheConnection : IDisposable
             }
         }
     }
-
+    
     public bool IsServer
     {
         get
@@ -334,6 +306,7 @@ public class QuicheConnection : IDisposable
     private async Task SendDatagramsAsync(CancellationToken cancellationToken)
     {
         byte[] dgramBuf;
+        bool waitFlag = false;
         while (!cancellationToken.IsCancellationRequested)
         {
             cancellationToken.ThrowIfCancellationRequested();
@@ -342,15 +315,31 @@ public class QuicheConnection : IDisposable
                 throw new QuicheException(QuicheError.QUICHE_ERR_DONE, "Connection was closed.");
             }
 
+            if (waitFlag)
+            {
+                await Task.Delay(75, cancellationToken);
+            }
+            else
+            {
             dgramBuf = await dgramSendChannel!.Reader.ReadAsync(cancellationToken);
+            }
+
             unsafe
             {
                 lock (this)
                 {
+                    if (NativePtr->IsDgramSendQueueFull())
+                    {
+                        waitFlag = true;
+                    }
+                    else
+                    {
+                        waitFlag = false;
                     fixed (byte* bufPtr = dgramBuf)
                     {
                         QuicheError errorCode = (QuicheError)NativePtr->DgramSend(bufPtr, (size_t)dgramBuf.Length);
                         QuicheException.ThrowIfError(errorCode);
+                        }
                     }
                 }
             }
