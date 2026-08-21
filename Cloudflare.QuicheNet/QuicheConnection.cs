@@ -864,6 +864,10 @@ public class QuicheConnection : IDisposable
                 sendQueue.Clear();
 
                 streamMap.Clear();
+                streamChannel.Writer.Complete();
+
+                dgramRecvChannel?.Writer.Complete();
+                dgramSendChannel?.Writer.Complete();
             }
         }
 
