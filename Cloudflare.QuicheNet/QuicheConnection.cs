@@ -92,6 +92,8 @@ public class QuicheConnection : IDisposable
 
     private const int MAX_STREAM_SEND_RETRIES = 10;
 
+    private readonly QuicheConfig config;
+
     private readonly Task? listenTask, recvDgramTask, sendDgramTask;
     private readonly Task recvTask, recvStreamTask, sendTask, sendStreamTask;
     private readonly CancellationTokenSource cts;
@@ -102,7 +104,6 @@ public class QuicheConnection : IDisposable
 
     private readonly Channel<byte[]>? dgramSendChannel;
     private readonly Channel<byte[]>? dgramRecvChannel;
-    private readonly DatagramOptions datagramOptions;
 
     private readonly Socket socket;
     private readonly EndPoint remoteEndPoint;
@@ -191,6 +192,8 @@ public class QuicheConnection : IDisposable
     {
         NativePtr = nativePtr;
 
+        this.config = config;
+
         this.socket = socket;
         this.remoteEndPoint = remoteEndPoint;
 
@@ -203,11 +206,10 @@ public class QuicheConnection : IDisposable
         streamMap = new();
         streamChannel = Channel.CreateUnbounded<QuicheStream>();
 
-        datagramOptions = config.DatagramOptions;
-        if (datagramOptions.Enabled)
+        if (config.DatagramOptions.Enabled)
         {
-            dgramSendChannel = Channel.CreateBounded<byte[]>(datagramOptions.SendQueueLength);
-            dgramRecvChannel = Channel.CreateBounded<byte[]>(datagramOptions.ReceiveQueueLength);
+            dgramSendChannel = Channel.CreateBounded<byte[]>(config.DatagramOptions.SendQueueLength);
+            dgramRecvChannel = Channel.CreateBounded<byte[]>(config.DatagramOptions.ReceiveQueueLength);
         }
 
         establishedTcs = new();
@@ -217,7 +219,7 @@ public class QuicheConnection : IDisposable
         recvTask = Task.Run(() => ReceiveAsync(cts.Token));
         sendTask = Task.Run(() => SendAsync(cts.Token));
 
-        if (datagramOptions.Enabled)
+        if (config.DatagramOptions.Enabled)
         {
             recvDgramTask = Task.Run(() => ReceiveDatagramsAsync(cts.Token));
             sendDgramTask = Task.Run(() => SendDatagramsAsync(cts.Token));
@@ -742,7 +744,7 @@ public class QuicheConnection : IDisposable
 
     public bool TryReceiveDatagram([NotNullWhen(true)] out byte[]? dgramBuf)
     {
-        if (!datagramOptions.Enabled)
+        if (!config.DatagramOptions.Enabled)
         {
             throw new QuicheException(QuicheError.QUICHE_ERR_INVALID_FRAME, "DATAGRAM frames are not enabled for this connection.");
         }
@@ -754,7 +756,7 @@ public class QuicheConnection : IDisposable
 
     public async Task<byte[]> ReceiveDatagramAsync(CancellationToken cancellationToken = default)
     {
-        if (!datagramOptions.Enabled)
+        if (!config.DatagramOptions.Enabled)
         {
             throw new QuicheException(QuicheError.QUICHE_ERR_INVALID_FRAME, "DATAGRAM frames are not enabled for this connection.");
         }
@@ -766,7 +768,7 @@ public class QuicheConnection : IDisposable
 
     public bool TrySendDatagram(byte[] dgramBuf)
     {
-        if (!datagramOptions.Enabled)
+        if (!config.DatagramOptions.Enabled)
         {
             throw new QuicheException(QuicheError.QUICHE_ERR_INVALID_FRAME, "DATAGRAM frames are not enabled for this connection.");
         }
@@ -782,7 +784,7 @@ public class QuicheConnection : IDisposable
 
     public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken = default)
     {
-        if (!datagramOptions.Enabled)
+        if (!config.DatagramOptions.Enabled)
         {
             throw new QuicheException(QuicheError.QUICHE_ERR_INVALID_FRAME, "DATAGRAM frames are not enabled for this connection.");
         }

@@ -12,7 +12,7 @@ public class QuicheConfig : IDisposable
 
     internal unsafe quiche_config* NativePtr { get; private set; }
 
-    // quiche_config properties
+    // quiche_config properties    
 
     private DatagramOptions datagramOptions;
     public DatagramOptions DatagramOptions
@@ -30,247 +30,316 @@ public class QuicheConfig : IDisposable
         }
     }
 
+    private long acknowledgementDelayExponent;
     public long AcknowledgementDelayExponent
     {
+        get => acknowledgementDelayExponent;
         set
         {
+            acknowledgementDelayExponent = value;
             unsafe
             {
-                NativePtr->SetAckDelayExponent((ulong)value);
+                NativePtr->SetAckDelayExponent((ulong)acknowledgementDelayExponent);
             }
         }
     }
 
+    private long activeConnectionIdLimit;
     public long ActiveConnectionIdLimit
     {
+        get => activeConnectionIdLimit;
         set
         {
+            activeConnectionIdLimit = value;
             unsafe
             {
-                NativePtr->SetActiveConnectionIdLimit((ulong)value);
+                NativePtr->SetActiveConnectionIdLimit((ulong)activeConnectionIdLimit);
             }
         }
     }
 
+    private QuicheCcAlgorithm ccAlgorithm;
     public QuicheCcAlgorithm CcAlgorithm
     {
         set
         {
+            ccAlgorithm = value;
             unsafe
             {
-                NativePtr->SetCcAlgorithm((size_t)(int)value);
+                NativePtr->SetCcAlgorithm((size_t)(int)ccAlgorithm);
             }
         }
     }
 
+    private int initialCongestionWindowPackets;
     public int InitialCongestionWindowPackets
     {
+        get => initialCongestionWindowPackets;
         set
         {
+            initialCongestionWindowPackets = value;
             unsafe
             {
-                NativePtr->SetInitialCongestionWindowPackets((nuint)value);
+                NativePtr->SetInitialCongestionWindowPackets((nuint)initialCongestionWindowPackets);
             }
         }
     }
 
+    private bool isActiveMigrationDisabled;
     public bool IsActiveMigrationDisabled
     {
+        get => isActiveMigrationDisabled;
         set
         {
+            isActiveMigrationDisabled = value;
             unsafe
             {
-                NativePtr->SetDisableActiveMigration(value);
+                NativePtr->SetDisableActiveMigration(isActiveMigrationDisabled);
             }
         }
     }
 
+    private bool isHyStartEnabled;
     public bool IsHyStartEnabled
     {
+        get => isHyStartEnabled;
         set
         {
+            isHyStartEnabled = value;
             unsafe
             {
-                NativePtr->EnableHystart(value);
+                NativePtr->EnableHystart(isHyStartEnabled);
             }
         }
     }
 
+    private bool isPacingEnabled;
     public bool IsPacingEnabled
     {
+        get => isPacingEnabled;
         set
         {
+            isPacingEnabled = value;
             unsafe
             {
-                NativePtr->EnablePacing(value);
+                NativePtr->EnablePacing(isPacingEnabled);
             }
         }
     }
 
+    public bool IsEarlyDataEnabled { get; }
+
+    private long maxAcknowledgmentDelay;
     public long MaxAcknowledgementDelay
     {
+        get => maxAcknowledgmentDelay;
         set
         {
+            maxAcknowledgmentDelay = value;
             unsafe
             {
-                NativePtr->SetMaxAckDelay((ulong)value);
+                NativePtr->SetMaxAckDelay((ulong)maxAcknowledgmentDelay);
             }
         }
     }
 
+    private int maxAmplificationFactor;
     public int MaxAmplificationFactor
     {
+        get => maxAmplificationFactor;
         set
         {
+            maxAmplificationFactor = value;
             unsafe
             {
-                NativePtr->SetMaxAmplificationFactor((nuint)value);
+                NativePtr->SetMaxAmplificationFactor((nuint)maxAmplificationFactor);
             }
         }
     }
 
+    private long maxIdleTimeout;
     public long MaxIdleTimeout
     {
+        get => maxIdleTimeout;
         set
         {
+            maxIdleTimeout = value;
             unsafe
             {
-                NativePtr->SetMaxIdleTimeout((ulong)value);
+                NativePtr->SetMaxIdleTimeout((ulong)maxIdleTimeout);
             }
         }
     }
 
+    private long maxInitialBidiStreams;
     public long MaxInitialBidiStreams
     {
+        get => maxInitialBidiStreams;
         set
         {
+            maxInitialBidiStreams = value;
             unsafe
             {
-                NativePtr->SetInitialMaxStreamsBidi((ulong)value);
+                NativePtr->SetInitialMaxStreamsBidi((ulong)maxInitialBidiStreams);
             }
         }
     }
 
+    private long maxInitialDataSize;
     public long MaxInitialDataSize
     {
+        get => maxInitialDataSize;
         set
         {
+            maxInitialDataSize = value;
             unsafe
             {
-                NativePtr->SetInitialMaxData((ulong)value);
+                NativePtr->SetInitialMaxData((ulong)maxInitialDataSize);
             }
         }
     }
 
+    private long maxInitialLocalBidiStreamDataSize;
     public long MaxInitialLocalBidiStreamDataSize
     {
+        get => maxInitialLocalBidiStreamDataSize;
         set
         {
+            maxInitialLocalBidiStreamDataSize = value;
             unsafe
             {
-                NativePtr->SetInitialMaxStreamDataBidiLocal((ulong)value);
+                NativePtr->SetInitialMaxStreamDataBidiLocal((ulong)maxInitialLocalBidiStreamDataSize);
             }
         }
     }
 
+    private long maxInitialRemoteBidiStreamDataSize;
     public long MaxInitialRemoteBidiStreamDataSize
     {
+        get => maxInitialRemoteBidiStreamDataSize;
         set
         {
+            maxInitialRemoteBidiStreamDataSize = value;
             unsafe
             {
-                NativePtr->SetInitialMaxStreamDataBidiRemote((ulong)value);
+                NativePtr->SetInitialMaxStreamDataBidiRemote((ulong)maxInitialRemoteBidiStreamDataSize);
             }
         }
     }
 
+    private long maxInitialUniStreamDataSize;
     public long MaxInitialUniStreamDataSize
     {
+        get => maxInitialUniStreamDataSize;
         set
         {
+            maxInitialUniStreamDataSize = value;
             unsafe
             {
-                NativePtr->SetInitialMaxStreamDataUni((ulong)value);
+                NativePtr->SetInitialMaxStreamDataUni((ulong)maxInitialUniStreamDataSize);
             }
         }
     }
 
+    private long maxInitialUniStreams;
     public long MaxInitialUniStreams
     {
+        get => maxInitialUniStreams;
         set
         {
+            maxInitialUniStreams = value;
             unsafe
             {
-                NativePtr->SetInitialMaxStreamsUni((ulong)value);
+                NativePtr->SetInitialMaxStreamsUni((ulong)maxInitialUniStreams);
             }
         }
     }
 
+    private long maxPacingRate;
     public long MaxPacingRate
     {
+        get => maxPacingRate;
         set
         {
+            maxPacingRate = value;
             unsafe
             {
-                NativePtr->SetMaxPacingRate((ulong)value);
+                NativePtr->SetMaxPacingRate((ulong)maxPacingRate);
             }
         }
     }
 
+    private int maxReceiveUdpPayloadSize;
     public int MaxReceiveUdpPayloadSize
     {
+        get => maxReceiveUdpPayloadSize;
         set
         {
+            maxReceiveUdpPayloadSize = value;
             unsafe
             {
-                NativePtr->SetMaxRecvUdpPayloadSize((nuint)value);
+                NativePtr->SetMaxRecvUdpPayloadSize((nuint)maxReceiveUdpPayloadSize);
             }
         }
     }
 
+    private int maxSendUdpPayloadSize;
     public int MaxSendUdpPayloadSize
     {
+        get => maxSendUdpPayloadSize;
         set
         {
+            maxSendUdpPayloadSize = value;
             unsafe
             {
-                NativePtr->SetMaxSendUdpPayloadSize((nuint)value);
+                NativePtr->SetMaxSendUdpPayloadSize((nuint)maxSendUdpPayloadSize);
             }
         }
     }
 
+    private bool shouldDiscoverPathMtu;
     public bool ShouldDiscoverPathMtu
     {
+        get => shouldDiscoverPathMtu;
         set
         {
+            shouldDiscoverPathMtu = value;
             unsafe
             {
-                NativePtr->DiscoverPmtu(value);
+                NativePtr->DiscoverPmtu(shouldDiscoverPathMtu);
             }
         }
     }
 
+    private bool shouldSendGrease;
     public bool ShouldSendGrease
     {
+        get => shouldSendGrease;
         set
         {
+            shouldSendGrease = value;
             unsafe
             {
-                NativePtr->Grease(value);
+                NativePtr->Grease(shouldSendGrease);
             }
         }
     }
 
+    private bool shouldVerifyPeer;
     public bool ShouldVerifyPeer
     {
+        get => shouldVerifyPeer;
         set
         {
+            shouldVerifyPeer = value;
             unsafe
             {
-                NativePtr->VerifyPeer(value);
+                NativePtr->VerifyPeer(shouldVerifyPeer);
             }
         }
     }
+
+    public bool ShouldLogKeys { get; }
 
     public QuicheConfig(
         bool isEarlyDataEnabled = false,
@@ -281,12 +350,12 @@ public class QuicheConfig : IDisposable
         {
             NativePtr = quiche_config_new(PROTOCOL_VERSION);
 
-            if (isEarlyDataEnabled)
+            if (IsEarlyDataEnabled = isEarlyDataEnabled)
             {
                 NativePtr->EnableEarlyData();
             }
 
-            if (shouldLogKeys)
+            if (ShouldLogKeys = shouldLogKeys)
             {
                 NativePtr->LogKeys();
             }
