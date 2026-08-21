@@ -100,26 +100,18 @@ QuicheConfig config = new QuicheConfig
 // Once connected
 QuicheConnection conn;
 
-// Observe datagrams once enough data is available
-if (conn.DatagramReceiveQueueSize > READ_THRESHOLD_BYTES)
-{
-    // Call will wait asynchronously for next DATAGRAM if none are available in the queue
-    byte[] data = await conn.ReceiveDatagramAsync(); 
-    
-    // Call will return false if no DATAGRAMs are available yet
-    bool result = conn.TryReceiveDatagram(out byte[]? data);
-}
+// Call will wait asynchronously for next DATAGRAM if none are available in the queue
+byte[] data = await conn.ReceiveDatagramAsync(); 
 
-// Send datagrams until queue is saturated
-if (conn.DatagramSendQueueSize < WRITE_THRESHOLD_BYTES)
-{
-    // Call will wait asynchronously until queue is no longer full
-    byte[] data = /* ... */;
-    await conn.SendDatagramAsync(data);
-    
-    // Call will return false if send queue is full
-    bool result = conn.TrySendDatagram(data);
-}
+// Call will return false if no DATAGRAMs are available yet
+bool result = conn.TryReceiveDatagram(out byte[]? data);
+
+// Call will wait asynchronously until queue is no longer full
+byte[] data = /* ... */;
+await conn.SendDatagramAsync(data);
+
+// Call will return false if send queue is full
+bool result = conn.TrySendDatagram(data);
 ```
 
 All queued `DATAGRAM`s are guaranteed to be delivered, but will not be drained reliably by Quiche before a connection closes; users handle this behavior themselves. This feature is best suited to delivering smaller messages alongside long-running streams. These messages can be used, for example, to exchange SIP messages between two parties in a voice / video call, all within the same connection and without dealing with rate control limitations that streams have to deal with. 
