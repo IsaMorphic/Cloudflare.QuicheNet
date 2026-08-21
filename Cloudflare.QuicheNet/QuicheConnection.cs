@@ -85,7 +85,7 @@ public class QuicheConnection : IDisposable
                 }
             }
 
-            await conn.ConnectionEstablished.WaitAsync(cancellationToken);
+            await conn.ConnectionEstablishedTask.WaitAsync(cancellationToken);
             return conn;
         }
     }
@@ -118,6 +118,9 @@ public class QuicheConnection : IDisposable
 
     internal Task ConnectionEstablishedTask => establishedTcs.Task;
 
+    private readonly Lazy<bool> isServer;
+    public bool IsServer => isServer.Value;
+
     public bool IsClosed
     {
         get
@@ -127,20 +130,6 @@ public class QuicheConnection : IDisposable
                 lock (this)
                 {
                     return NativePtr is null || NativePtr->IsClosed();
-                }
-            }
-        }
-    }
-    
-    public bool IsServer
-    {
-        get
-        {
-            unsafe
-            {
-                lock (this)
-                {
-                    return NativePtr is not null && NativePtr->IsServer();
                 }
             }
         }
@@ -171,6 +160,8 @@ public class QuicheConnection : IDisposable
 
         this.connectionId = new byte[QuicheLibrary.MAX_CONN_ID_LEN];
         connectionId.CopyTo(this.connectionId);
+
+        isServer = new(GetIsServer);
 
         sendQueue = new();
         recvQueue = new();
@@ -321,7 +312,7 @@ public class QuicheConnection : IDisposable
             }
             else
             {
-            dgramBuf = await dgramSendChannel!.Reader.ReadAsync(cancellationToken);
+                dgramBuf = await dgramSendChannel!.Reader.ReadAsync(cancellationToken);
             }
 
             unsafe
@@ -335,10 +326,10 @@ public class QuicheConnection : IDisposable
                     else
                     {
                         waitFlag = false;
-                    fixed (byte* bufPtr = dgramBuf)
-                    {
-                        QuicheError errorCode = (QuicheError)NativePtr->DgramSend(bufPtr, (size_t)dgramBuf.Length);
-                        QuicheException.ThrowIfError(errorCode);
+                        fixed (byte* bufPtr = dgramBuf)
+                        {
+                            QuicheError errorCode = (QuicheError)NativePtr->DgramSend(bufPtr, (size_t)dgramBuf.Length);
+                            QuicheException.ThrowIfError(errorCode);
                         }
                     }
                 }
@@ -685,6 +676,28 @@ public class QuicheConnection : IDisposable
         }
     }
 
+    private bool GetIsServer()
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                return NativePtr->IsServer();
+            }
+        }
+    }
+
+    private bool GetIsStreamFinished(ulong streamId)
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                return NativePtr->StreamFinished(streamId);
+            }
+        }
+    }
+
     private QuicheStream GetStream(ulong streamId) =>
         streamMap.GetOrAdd(streamId, id =>
         {
@@ -695,17 +708,6 @@ public class QuicheConnection : IDisposable
             }
             return stream;
         });
-
-    private bool IsStreamFinished(ulong streamId)
-    {
-        unsafe
-        {
-            lock (this)
-            {
-                return NativePtr is not null && NativePtr->StreamFinished(streamId);
-            }
-        }
-    }
 
     public async Task<QuicheStream> CreateOutboundStreamAsync(Direction direction, CancellationToken cancellationToken = default)
     {

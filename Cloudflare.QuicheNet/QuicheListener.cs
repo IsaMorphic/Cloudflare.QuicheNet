@@ -55,7 +55,7 @@ public class QuicheListener : IDisposable
     public async Task<QuicheConnection> AcceptAsync(CancellationToken cancellationToken = default)
     {
         QuicheConnection conn = await connChannel.Reader.ReadAsync(cancellationToken);
-        await conn.ConnectionEstablished.WaitAsync(cancellationToken);
+        await conn.ConnectionEstablishedTask.WaitAsync(cancellationToken);
         return conn;
     }
 
