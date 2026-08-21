@@ -6,13 +6,29 @@ using static Cloudflare.QuicheNet.QuicheLibrary;
 
 namespace Cloudflare.QuicheNet;
 
-public class QuicheConfig : IDisposable
+public partial class QuicheConfig : IDisposable
 {
     // quiche_config handle
 
     internal unsafe quiche_config* NativePtr { get; private set; }
 
     // quiche_config properties
+
+    private DatagramOptions datagramOptions;
+    public DatagramOptions DatagramOptions
+    {
+        get => datagramOptions;
+        set
+        {
+            datagramOptions = value;
+            unsafe
+            {
+                NativePtr->EnableDgram(datagramOptions.Enabled,
+                    (size_t)datagramOptions.SendQueueLength,
+                    (size_t)datagramOptions.ReceiveQueueLength);
+            }
+        }
+    }
 
     public long AcknowledgementDelayExponent
     {
@@ -362,25 +378,6 @@ public class QuicheConfig : IDisposable
                     SetTicketKey(keyBytesPtr, (nuint)keyBytes.Length),
                     "Failed to set ticket key contents for this instance.");
             }
-        }
-    }
-
-    public record DatagramOptions
-    {
-        public bool Enabled { get; init; }
-
-        public int SendQueueLength { get; init; }
-
-        public int ReceiveQueueLength { get; init; }
-    };
-
-    public void SetDatagramOptions(DatagramOptions options)
-    {
-        unsafe
-        {
-            NativePtr->EnableDgram(options.Enabled,
-                (size_t)options.SendQueueLength,
-                (size_t)options.ReceiveQueueLength);
         }
     }
 

@@ -18,16 +18,16 @@ async Task RunListenerAsync(CancellationToken cancellationToken)
         MaxInitialUniStreamDataSize = 4096,
         MaxInitialLocalBidiStreamDataSize = 4096,
         MaxInitialRemoteBidiStreamDataSize = 4096,
+        DatagramOptions = new DatagramOptions
+        {
+            Enabled = true,
+            ReceiveQueueLength = 64,
+            SendQueueLength = 64,
+        }
     };
     config.SetApplicationProtocols("test");
     config.LoadPrivateKeyFromPemFile("trust/key.pem");
     config.LoadCertificateChainFromPemFile("trust/cert.pem");
-    config.SetDatagramOptions(new QuicheConfig.DatagramOptions
-    {
-        Enabled = true,
-        ReceiveQueueLength = 64,
-        SendQueueLength = 64,
-    });
 
     // Listener init
     using QuicheListener listener = new QuicheListener(socket, config);
@@ -102,14 +102,14 @@ async Task RunClientAsync(CancellationToken cancellationToken)
         MaxInitialUniStreamDataSize = 4096,
         MaxInitialLocalBidiStreamDataSize = 4096,
         MaxInitialRemoteBidiStreamDataSize = 4096,
+        DatagramOptions = new DatagramOptions
+        {
+            Enabled = true,
+            ReceiveQueueLength = 64,
+            SendQueueLength = 64,
+        },
     };
     config.SetApplicationProtocols("test");
-    config.SetDatagramOptions(new QuicheConfig.DatagramOptions
-    {
-        Enabled = true,
-        ReceiveQueueLength = 64,
-        SendQueueLength = 64,
-    });
 
     // Open client connection
     Console.WriteLine("Client: connecting to server");
