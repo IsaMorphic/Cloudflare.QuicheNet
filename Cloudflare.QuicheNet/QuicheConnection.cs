@@ -619,6 +619,17 @@ public class QuicheConnection : IDisposable
             return stream;
         });
 
+    private bool IsStreamFinished(ulong streamId)
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                return NativePtr is not null && NativePtr->StreamFinished(streamId);
+            }
+        }
+    }
+
     private bool IsDatagramReceiveQueueEmpty()
     {
         unsafe
@@ -681,17 +692,6 @@ public class QuicheConnection : IDisposable
                     QuicheError errorCode = (QuicheError)NativePtr->DgramSend(bufPtr, (size_t)dgramBuf.Length);
                     QuicheException.ThrowIfError(errorCode);
                 }
-            }
-        }
-    }
-
-    internal bool IsStreamFinished(ulong streamId)
-    {
-        unsafe
-        {
-            lock (this)
-            {
-                return NativePtr is not null && NativePtr->StreamFinished(streamId);
             }
         }
     }
@@ -766,6 +766,15 @@ public class QuicheConnection : IDisposable
     public async Task SendDatagramAsync(byte[] dgramBuf, CancellationToken cancellationToken = default)
     {
         while (!TrySendDatagram(dgramBuf))
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            await Task.Delay(75);
+        }
+    }
+
+    public async Task WaitForShutdownAsync(CancellationToken cancellationToken = default)
+    {
+        while (!cancellationToken.IsCancellationRequested && !IsClosed)
         {
             cancellationToken.ThrowIfCancellationRequested();
             await Task.Delay(75);
