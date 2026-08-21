@@ -6,7 +6,7 @@ using static Cloudflare.QuicheNet.QuicheLibrary;
 
 namespace Cloudflare.QuicheNet;
 
-public partial class QuicheConfig : IDisposable
+public class QuicheConfig : IDisposable
 {
     // quiche_config handle
 
