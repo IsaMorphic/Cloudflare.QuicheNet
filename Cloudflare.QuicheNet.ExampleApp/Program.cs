@@ -12,20 +12,20 @@ async Task RunListenerAsync(CancellationToken cancellationToken)
     // Listener configuration
     using QuicheConfig config = new QuicheConfig
     {
-        MaxInitialBidiStreams = 16,
-        MaxInitialUniStreams = 16,
-        MaxInitialDataSize = 4096,
-        MaxInitialUniStreamDataSize = 4096,
-        MaxInitialLocalBidiStreamDataSize = 4096,
-        MaxInitialRemoteBidiStreamDataSize = 4096,
+        ApplicationProtocols = ["test"],
         DatagramOptions = new DatagramOptions
         {
             Enabled = true,
             ReceiveQueueLength = 64,
             SendQueueLength = 64,
-        }
+        },
+        MaxInitialBidiStreams = 16,
+        MaxInitialUniStreams = 16,
+        MaxInitialDataSize = 4096,
+        MaxInitialLocalBidiStreamDataSize = 4096,
+        MaxInitialRemoteBidiStreamDataSize = 4096,
+        MaxInitialUniStreamDataSize = 4096,
     };
-    config.SetApplicationProtocols("test");
     config.LoadPrivateKeyFromPemFile("trust/key.pem");
     config.LoadCertificateChainFromPemFile("trust/cert.pem");
 
@@ -96,20 +96,20 @@ async Task RunClientAsync(CancellationToken cancellationToken)
     // Client configuration
     using QuicheConfig config = new QuicheConfig
     {
-        MaxInitialBidiStreams = 16,
-        MaxInitialUniStreams = 16,
-        MaxInitialDataSize = 4096,
-        MaxInitialUniStreamDataSize = 4096,
-        MaxInitialLocalBidiStreamDataSize = 4096,
-        MaxInitialRemoteBidiStreamDataSize = 4096,
+        ApplicationProtocols = ["test"],
         DatagramOptions = new DatagramOptions
         {
             Enabled = true,
             ReceiveQueueLength = 64,
             SendQueueLength = 64,
         },
+        MaxInitialBidiStreams = 16,
+        MaxInitialUniStreams = 16,
+        MaxInitialDataSize = 4096,
+        MaxInitialLocalBidiStreamDataSize = 4096,
+        MaxInitialRemoteBidiStreamDataSize = 4096,
+        MaxInitialUniStreamDataSize = 4096,
     };
-    config.SetApplicationProtocols("test");
 
     // Open client connection
     Console.WriteLine("Client: connecting to server");

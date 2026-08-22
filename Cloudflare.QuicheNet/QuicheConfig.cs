@@ -14,6 +14,54 @@ public class QuicheConfig : IDisposable
 
     // quiche_config properties    
 
+    private readonly List<string> applicationProtocols;
+    public IReadOnlyList<string> ApplicationProtocols
+    {
+        get => applicationProtocols;
+        set
+        {
+            List<byte> protoList = new();
+            foreach (string proto in value)
+            {
+                protoList.AddRange([(byte)proto.Length, .. Encoding.UTF8.GetBytes(proto)]);
+            }
+
+            unsafe
+            {
+                fixed (byte* protosPtr = protoList.ToArray())
+                {
+                    QuicheException.ThrowIfError((QuicheError)NativePtr->
+                        SetApplicationProtos(protosPtr, (nuint)protoList.Count),
+                        "Failed to set application protocols for this instance.");
+                }
+            }
+
+            applicationProtocols.Clear();
+            applicationProtocols.AddRange(value);
+        }
+    }
+
+    private ReadOnlyMemory<byte> ticketKey;
+    public ReadOnlyMemory<byte> TicketKey
+    {
+        get => ticketKey;
+        set
+        {
+            byte[] keyBytes = value.ToArray();
+            unsafe
+            {
+                fixed (byte* keyBytesPtr = keyBytes)
+                {
+                    QuicheException.ThrowIfError((QuicheError)NativePtr->
+                        SetTicketKey(keyBytesPtr, (nuint)keyBytes.Length),
+                        "Failed to set ticket key contents for this instance.");
+                }
+            }
+
+            ticketKey = keyBytes;
+        }
+    }
+
     private DatagramOptions datagramOptions;
     public DatagramOptions DatagramOptions
     {
@@ -360,13 +408,16 @@ public class QuicheConfig : IDisposable
                 NativePtr->LogKeys();
             }
         }
+
+        applicationProtocols = new();
+        ticketKey = ReadOnlyMemory<byte>.Empty;
     }
 
     public void LoadCertificateChainFromPemFile(string filePath)
     {
         unsafe
         {
-            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath, '\0']))
             {
                 QuicheException.ThrowIfError(
                     (QuicheError)NativePtr->LoadCertChainFromPemFile(filePathPtr),
@@ -380,7 +431,7 @@ public class QuicheConfig : IDisposable
     {
         unsafe
         {
-            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath, '\0']))
             {
                 QuicheException.ThrowIfError(
                     (QuicheError)NativePtr->LoadPrivKeyFromPemFile(filePathPtr),
@@ -394,7 +445,7 @@ public class QuicheConfig : IDisposable
     {
         unsafe
         {
-            fixed (byte* pathPtr = Encoding.UTF8.GetBytes([.. path.ToCharArray(), '\u0000']))
+            fixed (byte* pathPtr = Encoding.UTF8.GetBytes([.. path, '\0']))
             {
                 QuicheException.ThrowIfError(
                     (QuicheError)NativePtr->LoadVerifyLocationsFromDirectory(pathPtr),
@@ -408,44 +459,12 @@ public class QuicheConfig : IDisposable
     {
         unsafe
         {
-            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath.ToCharArray(), '\u0000']))
+            fixed (byte* filePathPtr = Encoding.UTF8.GetBytes([.. filePath, '\0']))
             {
                 QuicheException.ThrowIfError(
                     (QuicheError)NativePtr->LoadVerifyLocationsFromFile(filePathPtr),
                     "Failed to load trusted CA locations from provided file!"
                     );
-            }
-        }
-    }
-
-    public void SetApplicationProtocols(params string[] protos)
-    {
-        List<byte> protoList = new();
-        foreach (string proto in protos)
-        {
-            protoList.AddRange([(byte)proto.Length, .. Encoding.UTF8.GetBytes(proto)]);
-        }
-
-        unsafe
-        {
-            fixed (byte* protosPtr = protoList.ToArray())
-            {
-                QuicheException.ThrowIfError((QuicheError)NativePtr->
-                    SetApplicationProtos(protosPtr, (nuint)protoList.Count),
-                    "Failed to set application protocols for this instance.");
-            }
-        }
-    }
-
-    public void SetTicketKey(byte[] keyBytes)
-    {
-        unsafe
-        {
-            fixed (byte* keyBytesPtr = keyBytes)
-            {
-                QuicheException.ThrowIfError((QuicheError)NativePtr->
-                    SetTicketKey(keyBytesPtr, (nuint)keyBytes.Length),
-                    "Failed to set ticket key contents for this instance.");
             }
         }
     }
