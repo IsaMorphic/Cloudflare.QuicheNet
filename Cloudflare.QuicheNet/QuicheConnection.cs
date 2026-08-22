@@ -118,8 +118,7 @@ public class QuicheConnection : IDisposable
 
     internal Task ConnectionEstablishedTask => establishedTcs.Task;
 
-    private readonly Lazy<bool> isServer;
-    public bool IsServer => isServer.Value;
+    public bool IsServer { get; }
 
     public bool IsClosed
     {
@@ -153,6 +152,8 @@ public class QuicheConnection : IDisposable
     {
         NativePtr = nativePtr;
 
+        IsServer = NativePtr->IsServer();
+
         this.config = config;
 
         this.socket = socket;
@@ -160,8 +161,6 @@ public class QuicheConnection : IDisposable
 
         this.connectionId = new byte[QuicheLibrary.MAX_CONN_ID_LEN];
         connectionId.CopyTo(this.connectionId);
-
-        isServer = new(GetIsServer);
 
         sendQueue = new();
         recvQueue = new();
@@ -676,28 +675,6 @@ public class QuicheConnection : IDisposable
         }
     }
 
-    private bool GetIsServer()
-    {
-        unsafe
-        {
-            lock (this)
-            {
-                return NativePtr->IsServer();
-            }
-        }
-    }
-
-    private bool GetIsStreamFinished(ulong streamId)
-    {
-        unsafe
-        {
-            lock (this)
-            {
-                return NativePtr->StreamFinished(streamId);
-            }
-        }
-    }
-
     private QuicheStream GetStream(ulong streamId) =>
         streamMap.GetOrAdd(streamId, id =>
         {
@@ -708,6 +685,17 @@ public class QuicheConnection : IDisposable
             }
             return stream;
         });
+
+    private bool IsStreamFinished(ulong streamId)
+    {
+        unsafe
+        {
+            lock (this)
+            {
+                return NativePtr->StreamFinished(streamId);
+            }
+        }
+    }
 
     public async Task<QuicheStream> CreateOutboundStreamAsync(Direction direction, CancellationToken cancellationToken = default)
     {
