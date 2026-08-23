@@ -90,8 +90,6 @@ public class QuicheConnection : IDisposable
         }
     }
 
-    private const int MAX_STREAM_SEND_RETRIES = 10;
-
     private readonly QuicheConfig config;
 
     private readonly Task? listenTask, recvDgramTask, sendDgramTask;
@@ -202,26 +200,38 @@ public class QuicheConnection : IDisposable
 
     private class SendScheduleInfo
     {
-        public int SendCount { get; set; }
-        public byte[]? SendBuffer { get; set; }
+        private readonly byte[] sendBuffer;
+        private int sendCount;
+
+        public ReadOnlySpan<byte> SendBufferData => sendBuffer.AsSpan(0, sendCount);
+
+        public SendScheduleInfo()
+        {
+            sendBuffer = new byte[QuicheLibrary.MAX_DATAGRAM_LEN];
+        }
+
+        public void Update(ReadOnlySpan<byte> newBufferData) 
+        {
+            lock (this)
+            {
+                newBufferData.CopyTo(sendBuffer);
+                sendCount = newBufferData.Length;
+            }
+        }
     }
 
     private void SendPacket(object? state)
     {
-        SendScheduleInfo? info = state as SendScheduleInfo;
-        if (info is not null)
+        SendScheduleInfo info = (SendScheduleInfo)state!;
+        lock (info)
         {
-            lock (info)
+            int bytesSent = 0;
+            while (bytesSent < info.SendBufferData.Length)
             {
-                if (info.SendBuffer is not null)
-                {
-                    int bytesSent = 0;
-                    while (bytesSent < info.SendCount)
-                    {
-                        var packetSpan = info.SendBuffer.AsSpan(bytesSent, info.SendCount - bytesSent);
-                        bytesSent += socket.SendTo(packetSpan, remoteEndPoint);
-                    }
-                }
+                bytesSent += socket.SendTo(
+                    info.SendBufferData[bytesSent..], 
+                    remoteEndPoint
+                    );
             }
         }
     }
@@ -230,7 +240,7 @@ public class QuicheConnection : IDisposable
     {
         byte[] packetBuf = new byte[QuicheLibrary.MAX_DATAGRAM_LEN];
 
-        SendScheduleInfo info = new() { SendBuffer = packetBuf };
+        SendScheduleInfo info = new SendScheduleInfo();
         using Timer timer = new Timer(SendPacket, info, Timeout.Infinite, Timeout.Infinite);
 
         while (!cancellationToken.IsCancellationRequested)
@@ -249,10 +259,10 @@ public class QuicheConnection : IDisposable
                 {
                     lock (this)
                     {
-                        fixed (byte* pktPtr = info.SendBuffer)
+                        fixed (byte* pktPtr = packetBuf)
                         {
                             resultOrError = (long)NativePtr->Send(
-                                pktPtr, (nuint)info.SendBuffer.Length,
+                                pktPtr, (nuint)packetBuf.Length,
                                 (quiche_send_info*)Unsafe.AsPointer(ref sendInfo)
                                 );
                         }
@@ -260,11 +270,7 @@ public class QuicheConnection : IDisposable
                 }
 
                 QuicheException.ThrowIfError((QuicheError)resultOrError);
-
-                lock (info)
-                {
-                    info.SendCount = (int)resultOrError;
-                }
+                info.Update(packetBuf.AsSpan(0, (int)resultOrError));
 
                 timer.Change(
                     TimeSpan.FromSeconds(Unsafe.As<timespec, CLong>
