@@ -8,6 +8,8 @@
 		<OutputType>Library</OutputType>
 		<MinVerDefaultPreReleaseIdentifiers>preview.0</MinVerDefaultPreReleaseIdentifiers>
 		<IsNuGetBuild>false</IsNuGetBuild>
+		<MinVerMinimumMajorMinor>0.30</MinVerMinimumMajorMinor>
+		<MinVerIgnoreHeight>true</MinVerIgnoreHeight>
 	</PropertyGroup>
 
 	<PropertyGroup>
