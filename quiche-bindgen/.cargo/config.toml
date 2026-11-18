@@ -6,4 +6,5 @@ rustflags = [
 ]
 
 [target.aarch64-unknown-linux-gnu]
+rustflags = ["-L", "/usr/aarch64-linux-gnu/lib"]
 linker = "aarch64-linux-gnu-gcc"
