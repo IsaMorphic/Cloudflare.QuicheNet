@@ -51,7 +51,7 @@ jobs:
       - name: Build for x64
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --framework net10.0 --runtime ${{ env.RUNTIME_ID_OS }}-x64
       - name: Build for ARM64
-        run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --framework net10.0 --runtime ${{ env.RUNTIME_ID_OS }}-arm64
+        run: PKG_CONFIG_ALLOW_CROSS=1 PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --framework net10.0 --runtime ${{ env.RUNTIME_ID_OS }}-arm64
       - name: Create NuGet package (native)
         run: dotnet pack Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --output build/
       - name: Create NuGet package (managed)
