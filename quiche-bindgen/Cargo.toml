@@ -1,6 +1,6 @@
 [package]
 name = "quiche-bindgen"
-version = "0.30.0"
+version = "0.30.1"
 edition = "2021"
 
 [lib]
@@ -11,4 +11,4 @@ quiche = { path = "../quiche/quiche", features = ["ffi", "boringssl-boring-crate
 
 [build-dependencies]
 csbindgen = "1.9.8"
-bindgen = "0.72.1"
+bindgen = "0.73.2"
