@@ -42,7 +42,7 @@ jobs:
           dotnet-version: 10.0.x
       - name: Install cross-compilation tools (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: 
+        run: |
           sudo dpkg --add-architecture arm64
           sudo apt update
           sudo apt install gcc-aarch64-linux-gnu
