@@ -42,10 +42,7 @@ jobs:
           dotnet-version: 10.0.x
       - name: Install cross-compilation tools (Linux)
         if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo dpkg --add-architecture arm64
-          sudo apt update
-          sudo apt install gcc-aarch64-linux-gnu libssl-dev:arm64
+        run: cargo install cargo-zigbuild
       - name: Restore workloads
         run: dotnet workload restore
       - name: Build for x64
@@ -53,13 +50,6 @@ jobs:
       - name: Build for ARM64
         if: matrix.os != 'ubuntu-latest'
         run: dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --framework net10.0 --runtime ${{ env.RUNTIME_ID_OS }}-arm64
-      - name: Build for ARM64 (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          cd quiche-bindgen
-          cargo clean
-          cd ..
-          PKG_CONFIG_ALLOW_CROSS=1 PKG_CONFIG_PATH=/usr/lib/aarch64-linux-gnu/pkgconfig dotnet build Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --framework net10.0 --runtime ${{ env.RUNTIME_ID_OS }}-arm64
       - name: Create NuGet package (native)
         run: dotnet pack Cloudflare.QuicheNet.NativeAssets.${{ env.PACKAGE_ID_OS }} --output build/
       - name: Create NuGet package (managed)
