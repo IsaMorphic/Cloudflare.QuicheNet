@@ -7,7 +7,7 @@ edition = "2021"
 crate-type = ["cdylib"]
 
 [dependencies]
-quiche = { path = "../quiche/quiche", features = ["ffi", "qlog"] }
+quiche = { path = "../quiche/quiche", features = ["ffi", "qlog", "sfv"] }
 
 [build-dependencies]
 csbindgen = "1.9.8"
