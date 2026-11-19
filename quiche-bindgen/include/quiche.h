@@ -1257,11 +1257,6 @@ ssize_t quiche_h3_recv_body(quiche_h3_conn *conn, quiche_conn *quic_conn,
 int quiche_h3_send_goaway(quiche_h3_conn *conn, quiche_conn *quic_conn,
                           uint64_t id);
 
-// Try to parse an Extensible Priority field value.
-int quiche_h3_parse_extensible_priority(uint8_t *priority,
-                                        size_t priority_len,
-                                        quiche_h3_priority *parsed);
-
 /// Sends a PRIORITY_UPDATE frame on the control stream with specified
 /// request stream ID and priority.
 int quiche_h3_send_priority_update_for_request(quiche_h3_conn *conn,
