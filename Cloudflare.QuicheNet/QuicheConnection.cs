@@ -273,8 +273,6 @@ public class QuicheConnection : IDisposable
                 info.Update(packetBuf.AsSpan(0, (int)resultOrError));
 
                 timer.Change(
-                    TimeSpan.FromSeconds(Unsafe.As<timespec, CLong>
-                        (ref sendInfo.at).Value) +
                     TimeSpan.FromTicks(sendInfo.at.tv_nsec.Value / 100),
                     Timeout.InfiniteTimeSpan
                     );
